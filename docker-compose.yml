@@ -1,0 +1,19 @@
+version: "3.2"
+services:
+  api:
+    image: flask_api
+    build:
+      context: ./
+      dockerfile: ./dockerfiles/Dockerfile_api
+    command: "gunicorn --bind 0.0.0.0:5000 service:app"
+
+#  redis:
+#    image: redis:5.0.6
+#    expose:
+#      - 6379
+#
+#  model:
+#    image: ml_service
+#    build: ./
+#    dockerfile: ./dockerfiles/Dockerfile_ml
+#    command: python3 /src/ml_service.py
