@@ -1,6 +1,7 @@
 import json
 import time
 
+from classifier import SentimentClassifier
 import redis
 
 import settings
@@ -11,6 +12,25 @@ db = redis.StrictRedis(host=settings.REDIS_IP,
                        port=settings.REDIS_PORT,
                        db=settings.REDIS_DB_ID)
 
+model = SentimentClassifier()
+
+
+def sentiment_and_score(score):
+    sentiment = None
+    new_score = None
+    if score < .45:
+        sentiment = 'Negative'
+        new_score = 1 - score
+    elif score < .55:
+        sentiment = 'Neutral'
+        scaled_score = (score - .45) / (.55 - .45)
+        new_score = 1 - scaled_score if scaled_score < .5 else scaled_score
+    else:
+        sentiment = 'Positive'
+        new_score = score
+
+    return sentiment, new_score
+
 
 def classify_process():
     # TODO
@@ -19,23 +39,25 @@ def classify_process():
         queue = db.lrange(settings.REDIS_QUEUE,
                           settings.REDIS_DB_ID,
                           1)
-        print(queue)
 
         # TODO
         for q in queue:
             # TODO
             q = json.loads(q.decode("utf-8"))
 
-            print(q)
-
             # TODO
-            imageID = q["id"]
+            job_id = q["id"]
 
             # RUN ML MODEL...
-            output = 'Resuelto: {}'.format(q['text'])
+            prediction = model.predict(q['text'])
+            sentiment, score = sentiment_and_score(prediction)
+            output = {
+                'prediction': sentiment,
+                'score': score
+            }
 
             # TODO
-            db.set(imageID, json.dumps(output))
+            db.set(job_id, json.dumps(output))
 
             # TODO
             db.ltrim(settings.REDIS_QUEUE, 1, -1)
@@ -45,4 +67,11 @@ def classify_process():
 
 
 if __name__ == "__main__":
+    print('Loading ML model...')
+    # Warm up model first
+    model.predict('Warm up...')
+    print('Model correctly loaded')
+
+    # Now launch process
+    print('Launching ML service...')
     classify_process()

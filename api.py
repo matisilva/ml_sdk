@@ -50,8 +50,9 @@ def predict():
             # Check if the text was correctly processed by our ML model
             if output is not None:
                 # Decode reponse from model and add it to our api response
-                output = output.decode("utf-8")
-                rpse['prediction'] = json.loads(output)
+                output = json.loads(output.decode("utf-8"))
+                rpse['prediction'] = output['prediction']
+                rpse['score'] = output['score']
 
                 # Delete results from queue and exit loop
                 db.delete(job_id)
