@@ -5,15 +5,24 @@ services:
     build:
       context: ./
       dockerfile: ./dockerfiles/Dockerfile_api
-    command: "gunicorn --bind 0.0.0.0:5000 service:app"
+#    command: "gunicorn --log-level debug --bind 0.0.0.0:5000 api:app"
+    command: "python3 /src/api.py"
+    ports:
+      - "5000:5000"
+    environment:
+      - PYTHONUNBUFFERED=TRUE
+      - FLASK_ENV=development
+      - FLASK_DEBUG=1
+    depends_on:
+      - redis
+      - model
 
-#  redis:
-#    image: redis:5.0.6
-#    expose:
-#      - 6379
-#
-#  model:
-#    image: ml_service
-#    build: ./
-#    dockerfile: ./dockerfiles/Dockerfile_ml
-#    command: python3 /src/ml_service.py
+  redis:
+    image: redis:5.0.6
+
+  model:
+    image: ml_service
+    build:
+      context: ./
+      dockerfile: ./dockerfiles/Dockerfile_ml
+    command: "python3 /src/ml_service.py"

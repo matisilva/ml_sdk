@@ -1,9 +1,10 @@
 FROM python:3.5
 
 RUN pip3 install \
-    flask \
-    gunicorn
+    flask==1.1.1 \
+    gunicorn==19.9.0 \
+    redis==3.3.11
 
-COPY api.py /src/api.py
+ADD . /src/
 
 WORKDIR /src
