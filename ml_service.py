@@ -19,15 +19,17 @@ def sentiment_and_score(score):
     sentiment = None
     new_score = None
     if score < .45:
-        sentiment = 'Negative'
+        sentiment = 'Negativo'
         new_score = 1 - score
     elif score < .55:
         sentiment = 'Neutral'
         scaled_score = (score - .45) / (.55 - .45)
         new_score = 1 - scaled_score if scaled_score < .5 else scaled_score
     else:
-        sentiment = 'Positive'
+        sentiment = 'Positivo'
         new_score = score
+
+    new_score = round(new_score, 4)
 
     return sentiment, new_score
 

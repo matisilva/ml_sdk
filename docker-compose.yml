@@ -16,6 +16,8 @@ services:
     depends_on:
       - redis
       - model
+    volumes:
+      - ./:/src/
 
   redis:
     image: redis:5.0.6
@@ -26,3 +28,5 @@ services:
       context: ./
       dockerfile: ./dockerfiles/Dockerfile_ml
     command: "python3 /src/ml_service.py"
+    depends_on:
+      - redis
