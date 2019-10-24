@@ -15,23 +15,29 @@ db = redis.StrictRedis(host=settings.REDIS_IP,
 model = SentimentClassifier()
 
 
-def sentiment_and_score(score):
+def sentiment_from_score(score):
     sentiment = None
-    new_score = None
+    # new_score = None
     if score < .45:
         sentiment = 'Negativo'
-        new_score = 1 - score
+        # new_score = 1 - score
     elif score < .55:
         sentiment = 'Neutral'
-        scaled_score = (score - .45) / (.55 - .45)
-        new_score = 1 - scaled_score if scaled_score < .5 else scaled_score
+        # scaled_score = (score - .45) / (.55 - .45)
+        # new_score = 1 - scaled_score if scaled_score < .5 else scaled_score
     else:
         sentiment = 'Positivo'
-        new_score = score
+        # new_score = score
 
-    new_score = round(new_score, 4)
+    return sentiment
 
-    return sentiment, new_score
+
+def predict(text):
+    score = model.predict(text)
+    score = round(score, 4)
+    sentiment = sentiment_from_score(score)
+
+    return sentiment, score
 
 
 def classify_process():
@@ -51,8 +57,7 @@ def classify_process():
             job_id = q["id"]
 
             # RUN ML MODEL...
-            prediction = model.predict(q['text'])
-            sentiment, score = sentiment_and_score(prediction)
+            sentiment, score = predict(q['text'])
             output = {
                 'prediction': sentiment,
                 'score': score
@@ -71,7 +76,7 @@ def classify_process():
 if __name__ == "__main__":
     print('Loading ML model...')
     # Warm up model first
-    model.predict('Warm up...')
+    predict('Warm up...')
     print('Model correctly loaded')
 
     # Now launch process
