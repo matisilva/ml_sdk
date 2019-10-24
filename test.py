@@ -2,7 +2,7 @@ import requests
 
 
 def post_predict(text):
-    url = 'http://0.0.0.0:5000/predict'
+    url = 'http://0.0.0.0/predict'
 
     querystring = {'text': text}
     headers = {

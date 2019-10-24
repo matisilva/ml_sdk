@@ -1,6 +1,9 @@
 import unittest
-
-import ml_service
+import os.path
+import sys
+sys.path.append(os.path.join(
+    os.path.dirname(os.path.realpath(__file__)), os.pardir))
+from ml_service import predict
 
 
 class TestMLService(unittest.TestCase):
@@ -12,19 +15,18 @@ class TestMLService(unittest.TestCase):
     def test_model_response(self):
         pos_sentence = 'Me gusto la pelicula'
         pos_score = 0.975
-        pos_prediction = ml_service.predict(pos_sentence)
-        print(pos_prediction)
+        pos_prediction = predict(pos_sentence)
         self.assertAlmostEqual(pos_prediction, pos_score, places=3)
 
         neg_sentence = 'No me gusto la pelicula'
         neg_score = 0.358
-        neg_prediction = ml_service.predict(neg_sentence)
-        print(neg_prediction)
+        neg_prediction = predict(neg_sentence)
         self.assertAlmostEqual(neg_prediction, neg_score, places=3)
 
     def test_db_conn(self):
         # TODO
-        #ml_service.db.ping()
+        # db.ping()
+        pass
 
 
 if __name__ == '__main__':
