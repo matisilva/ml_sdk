@@ -73,7 +73,7 @@ input[type=submit]:hover {
 <h2>Análisis de sentimientos en oraciones</h2>
 
 <div class="container">
-  <form method="POST" action="/">
+  <form id="form" method="POST" action="/">
     <div class="row">
       <div class="col-25">
         <label for="subject">Ingrese la oración:</label>
@@ -99,4 +99,18 @@ input[type=submit]:hover {
 </div>
 
 </body>
+<script type="text/javascript">
+  form = document.getElementById("form")
+  // Execute a function when the user releases a key on the keyboard
+  form.addEventListener("keyup", function(event) {
+    // Number 13 is the "Enter" key on the keyboard
+    if (event.ctrlKey && event.keyCode === 13) {
+      // Cancel the default action, if needed
+      event.preventDefault();
+      // Trigger the button element with a click
+      form.submit()
+    }
+  });
+</script>
+
 </html>

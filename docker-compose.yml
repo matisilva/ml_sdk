@@ -4,9 +4,9 @@ services:
     image: flask_api
     build:
       context: ./api
-    command: "gunicorn --workers=8 --bind 0.0.0.0:5000 api:app"
+    command: "gunicorn --workers=8 --bind 0.0.0.0:5000 views:app"
     ports:
-      - "5000:5000"
+      - "80:5000"
     environment:
       - FLASK_DEBUG=1
     depends_on:
