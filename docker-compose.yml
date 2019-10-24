@@ -3,21 +3,15 @@ services:
   api:
     image: flask_api
     build:
-      context: ./
-      dockerfile: ./dockerfiles/Dockerfile_api
-#    command: "gunicorn --log-level debug --bind 0.0.0.0:5000 api:app"
-    command: "python3 /src/api.py"
+      context: ./api
+    command: "gunicorn --workers=8 --bind 0.0.0.0:5000 api:app"
     ports:
       - "5000:5000"
     environment:
-      - PYTHONUNBUFFERED=TRUE
-      - FLASK_ENV=development
       - FLASK_DEBUG=1
     depends_on:
       - redis
       - model
-    volumes:
-      - ./:/src/
 
   redis:
     image: redis:5.0.6
@@ -25,8 +19,7 @@ services:
   model:
     image: ml_service
     build:
-      context: ./
-      dockerfile: ./dockerfiles/Dockerfile_ml
+      context: ./model
     command: "python3 /src/ml_service.py"
     depends_on:
       - redis

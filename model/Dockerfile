@@ -5,6 +5,6 @@ RUN pip3 install \
     ipython==7.8.0 \
     redis==3.3.11
 
-ADD . /src/
+ADD ./ /src/
 
 WORKDIR /src

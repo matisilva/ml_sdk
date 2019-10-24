@@ -58,7 +58,7 @@ def index():
     }
 
     text_data = request.form.get('text_data')
-    print('LLego', text_data)
+
     if text_data:
         prediction, score = model_predict(text_data)
         context['text'] = text_data
@@ -81,7 +81,6 @@ def predict():
     if request.method == 'POST' and request.args.get('text'):
         # Get text from endpoint to analyze positiveness score
         text_data = request.args.get('text')
-        app.logger.info('Received {}'.format(text_data))
 
         prediction, score = model_predict(text_data)
         rpse['prediction'] = prediction
