@@ -32,6 +32,15 @@ def index():
     return render_template('index.html', context=context)
 
 
+@router.route('/feedback', methods=['GET', 'POST'])
+def feedback():
+    report = request.form.get('report')
+    if report:
+        with open("feedback", "a+") as f:
+            f.write(report + "\n")
+    return render_template('index.html', context={})
+
+
 @router.route('/predict', methods=['POST'])
 def predict():
     # Initial response

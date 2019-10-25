@@ -35,8 +35,7 @@ Una vez realizadas las configuraciones iniciales para completar la tarea será n
 El objetivo aqui es duplicar nuestra capacidad de respuesta instanciando un "worker" mas en nuestra infraestructura. Para ello deberíamos aumentar la cantidad de replicas que tenemos del contenedor *model* y monitorear las mejoras en grafana usando nuestro cliente locust para exigir la carga.
 
 ## 4. Obtener y almacenar feedback de usuarios
-TODO
-(Puede ser ejercicio opcional, será muy difícil de hacer? Mi idea es poner dos botones onda pulgar para arriba o abajo, que vos puedas clickear si te pareció bien o mal la predicción. Esto habría que almacenarlo en un csv ponele para luego tener una lista de las oraciones en la cual la api falló.)
+Agregar un endpoint para feedback y permitir al usuario acusar respuesta incorrecta. Almacenar en un csv todos estos reportes para una retroalimentacion.
 
 
 ## (opcional) 5. Usar traefik como un DNS resolver y descubrir sus features

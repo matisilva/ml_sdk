@@ -13,6 +13,8 @@ services:
     depends_on:
       - redis
       - model
+    volumes:
+      - ./feedback:/src/feedback
     logging:
       driver: "gelf"
       options:

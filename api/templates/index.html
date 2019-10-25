@@ -85,17 +85,21 @@ input[type=submit]:hover {
     <div class="row">
       <input type="submit" value="Submit">
     </div>
-
-    {% if context['prediction'] %}
-    <div class="row">
-      <div class="col-25">
-        <label for="subject">Oración: {{ context['text'] }} </label><br>
-        <label for="subject">Sentimiento: {{ context['prediction'] }} </label><br>
-        <label for="subject">Score: {{ context['score'] }}% </label>
-      </div>
-    {% endif %}
-
   </form>
+
+  {% if context['prediction'] %}
+  <div class="row">
+    <div class="col-25">
+      <label for="subject">Oración: {{ context['text'] }} </label><br>
+      <label for="subject">Sentimiento: {{ context['prediction'] }} </label><br>
+      <label for="subject">Score: {{ context['score'] }}% </label>
+    </div>
+  </div>
+  <form id="form" method="POST" action="/feedback">
+      <button type="submit">Esta respuesta es incorrecta</button>
+      <input name="report" style="visibility: hidden;" value="Oración: {{ context['text'] }} Sentimiento: {{ context['prediction'] }} Score: {{ context['score'] }}% "/>
+  </form>
+  {% endif %}
 </div>
 
 </body>
