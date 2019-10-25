@@ -13,6 +13,11 @@ services:
     depends_on:
       - redis
       - model
+    logging:
+      driver: "gelf"
+      options:
+        gelf-address: "udp://localhost:12201"
+        tag: "api-logs"
 
   redis:
     image: redis:5.0.6
