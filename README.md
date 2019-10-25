@@ -1,21 +1,30 @@
-# Diplodatos 2019: Deployment of Machine Learning Systems
+# Despliegue de sistemas predictivos
+> Diplodatos 2019
 
-## Build & Run
-
-To launch the system:
-
-```
-docker-compose up --build -d
-```
-
-To stop it:
+## Instalar y ejecutar
 
 ```
-docker-compose down
+$ docker-compose up --build -d
 ```
 
-## Test
+Para detener los servicios:
 
 ```
-python3 test.py
+$ docker-compose down
 ```
+
+## Tests
+
+Necesitas tener instalado *nosetests* (`pip install nose==1.3.7`).
+
+### Integración
+
+`$ nosetests tests/`
+
+### API
+
+???
+
+### Model
+
+???
