@@ -1,0 +1,52 @@
+version: "3.3"
+
+services:
+
+  traefik:
+    image: "traefik:v2.0.0-rc3"
+    container_name: "traefik"
+    command:
+      - "--log.level=DEBUG"
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+    ports:
+      - "80:80"
+      - "8080:8080"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+
+  whoami:
+    image: "containous/whoami"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.whoami.rule=Host(`my.own.whoami.localhost`)"
+      - "traefik.http.routers.whoami.entrypoints=web"
+
+  api:
+    image: flask_api
+    container_name: ml_api
+    build:
+      context: ./api
+    command: "gunicorn --workers=8 --bind 0.0.0.0:80 app:app"
+    depends_on:
+      - redis
+      - model
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.services.api.loadbalancer.server.port=80"
+      - "traefik.http.routers.api.rule=Host(`my.own.api.localhost`)"
+      - "traefik.http.routers.api.entrypoints=web"
+
+  redis:
+    image: redis:5.0.6
+
+  model:
+    image: ml_service
+    container_name: ml_service
+    build:
+      context: ./model
+    command: "python3 /src/ml_service.py"
+    depends_on:
+      - redis
