@@ -8,8 +8,8 @@ from app import app
 
 
 class TestAPI(unittest.TestCase):
-    POS_SENT = "Esta es una oracion positiva y estoy contento por eso"
-    NEG_SENT = "Estoy preocupado por la inseguridad"
+    POS_SENT = 'Esta es una oracion positiva y estoy contento por eso'
+    NEG_SENT = 'Tenemos problemas de inseguridad'
 
     def test_bad_parameters(self):
         response = app.test_client().post(
@@ -18,7 +18,6 @@ class TestAPI(unittest.TestCase):
             content_type='application/json',
         )
         self.assertEqual(response.status_code, 400)
-        # print(response.get_data(as_text=True))
         data = json.loads(response.get_data(as_text=True))
         self.assertEqual(data['success'], False)
 

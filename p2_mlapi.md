@@ -9,7 +9,6 @@ En esta segunda iteración, vamos a continuar trabajando en nuestra API para pre
 4. Obtener y almacenar feedback de usuarios
 5. Usar traefik como un DNS resolver y descubrir sus features
 
-
 ## 1. Testing de stress con *Locust*
 
 Para esta tarea deberá crear una nueva carpeta en el proyecto, llamada `stress_test`, en la cual colocará los archivos `.py` de Locust.
@@ -23,7 +22,7 @@ Para esta tarea deberá crear una nueva carpeta en el proyecto, llamada `stress_
 Si bien la propuesta es ElasticSearch Kibana y Logstash para mejor entendimiento usaremos tecnologías similares. En este punto se debera instanciar un stack compuesto de los siguientes servicios:
   - *mongodb*: Para dar soporte de base de datos a graylog en la gestion de usuarios y configuraciones
   - *elasticsearch*: Para el almacenamiento persistente de los datos a ser procesados. En este caso serán logs de salida de los contenedores.
-  - *graylog*: Reponsable de la gestión de elasticsearch. Creará nuestros indices rotativos con persistencia configurable y ademas nos permitirá hacer preproceso en la ingestión de datos. Su driver de ingestión de datos nos permitirá conectar la salida de los contenedores de manera nativa. 
+  - *graylog*: Reponsable de la gestión de elasticsearch. Creará nuestros indices rotativos con persistencia configurable y ademas nos permitirá hacer preproceso en la ingestión de datos. Su driver de ingestión de datos nos permitirá conectar la salida de los contenedores de manera nativa.
   - *grafana*: Herramienta que utilizaremos para la creación de dashboards para visualización. Elegida por su versatilidad y facil entendimiento.
 
 Una vez realizadas las configuraciones iniciales para completar la tarea será necesario enviar los logs al stack instanciado y visualizar dashboards de actividad donde se pueda ver en tiempo real las siguientes estadisticas.
@@ -32,7 +31,7 @@ Una vez realizadas las configuraciones iniciales para completar la tarea será n
 - *histograma de actividad* diferenciando cuales dieron respuesta positiva y cuales negativa.
 - *alerta de errores* al recibir mas de 10 request con codigo de error (>=400) en un minuto
 
-*AYUDA*: Aqui (https://docs.graylog.org/en/3.1/pages/installation/docker.html) encontrarán la informacion al respecto de como levantar el stack propuesto. Los pasos para la configuración inicial serán explicados en el teórico. 
+*AYUDA*: Aqui (https://docs.graylog.org/en/3.1/pages/installation/docker.html) encontrarán la informacion al respecto de como levantar el stack propuesto. Los pasos para la configuración inicial serán explicados en el teórico.
 
 ## 3. Scaling de servicios
 
@@ -40,7 +39,6 @@ El objetivo aqui es duplicar nuestra capacidad de respuesta instanciando un "wor
 
 ## 4. Obtener y almacenar feedback de usuarios
 En las views de nuestro proyecto deberán completar el endpoint para feedback y permitir al usuario asi acusar una respuesta incorrecta. Almacenar en un csv todos estos reportes para una futura retroalimentacion.
-
 
 ## (opcional) 5. Usar traefik como un DNS resolver y descubrir sus features
 Entre las muchas funcionalidades que traefik tiene integradas podemos encontrar un balanceador de carga con resoluciones DNS.

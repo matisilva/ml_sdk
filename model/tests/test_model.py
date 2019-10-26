@@ -8,25 +8,16 @@ from ml_service import predict
 
 class TestMLService(unittest.TestCase):
 
-    # def setUp(self):
-    #     self.model = model
-    #     self.db = db
-
     def test_model_response(self):
         pos_sentence = 'Me gusto la pelicula'
-        pos_score = 0.975
         pos_prediction = predict(pos_sentence)
-        self.assertAlmostEqual(pos_prediction, pos_score, places=3)
+        self.assertEqual(pos_prediction[0], 'Positivo')
+        self.assertAlmostEqual(pos_prediction[1], 0.7406, places=3)
 
         neg_sentence = 'No me gusto la pelicula'
-        neg_score = 0.358
         neg_prediction = predict(neg_sentence)
-        self.assertAlmostEqual(neg_prediction, neg_score, places=3)
-
-    def test_db_conn(self):
-        # TODO
-        # db.ping()
-        pass
+        self.assertEqual(neg_prediction[0], 'Negativo')
+        self.assertAlmostEqual(neg_prediction[1], 0.255, places=3)
 
 
 if __name__ == '__main__':

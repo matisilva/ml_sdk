@@ -15,16 +15,16 @@ $ docker-compose down
 
 ## Tests
 
-Necesitas tener instalado *nosetests* (`pip install nose==1.3.7`).
-
 ### Integración
 
-`$ nosetests tests/`
+Necesitas tener instalado *requests* (`pip install requests>=2.22.0`).
+
+`$ python3 tests/test_integration.py`
 
 ### API
 
-???
+`$ docker-compose exec api python3 tests/test_api.py`
 
 ### Model
 
-???
+`$ docker-compose exec model python3 tests/test_model.py`
