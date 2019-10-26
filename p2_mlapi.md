@@ -7,6 +7,8 @@ En esta segunda iteración, vamos a continuar trabajando en nuestra API para pre
 2. Monitoreo con *EKL*
 3. Scaling de servicios
 4. Obtener y almacenar feedback de usuarios
+5. Usar traefik como un DNS resolver y descubrir sus features
+
 
 ## 1. Testing de stress con *Locust*
 
@@ -30,13 +32,22 @@ Una vez realizadas las configuraciones iniciales para completar la tarea será n
 - *histograma de actividad* diferenciando cuales dieron respuesta positiva y cuales negativa.
 - *alerta de errores* al recibir mas de 10 request con codigo de error (>=400) en un minuto
 
+*AYUDA*: Aqui (https://docs.graylog.org/en/3.1/pages/installation/docker.html) encontrarán la informacion al respecto de como levantar el stack propuesto. Los pasos para la configuración inicial serán explicados en el teórico. 
+
 ## 3. Scaling de servicios
 
-El objetivo aqui es duplicar nuestra capacidad de respuesta instanciando un "worker" mas en nuestra infraestructura. Para ello deberíamos aumentar la cantidad de replicas que tenemos del contenedor *model* y monitorear las mejoras en grafana usando nuestro cliente locust para exigir la carga.
+El objetivo aqui es duplicar nuestra capacidad de respuesta instanciando un "worker" mas en nuestra infraestructura. Para ello deberíamos aumentar la cantidad de replicas que tenemos del contenedor *model* y visualizar las mejoras en grafana usando nuestro cliente locust para exigir la carga. Para ello deberán utilizar el comando `docker-compose scale <SERVICE>=<#INSTANCES>`
 
 ## 4. Obtener y almacenar feedback de usuarios
-Agregar un endpoint para feedback y permitir al usuario acusar respuesta incorrecta. Almacenar en un csv todos estos reportes para una retroalimentacion.
+En las views de nuestro proyecto deberán completar el endpoint para feedback y permitir al usuario asi acusar una respuesta incorrecta. Almacenar en un csv todos estos reportes para una futura retroalimentacion.
 
 
 ## (opcional) 5. Usar traefik como un DNS resolver y descubrir sus features
-Entre las muchas funcionalidades que traefik tiene integradas podemos encontrar un balanceador de carga con resoluciones DNS. La idea de este punto es poder utilizar traefik y descubrir sus funcionalidades integrandolo en nuestro proyecto de manera tal que podamos enviar una peticion a nuestra API llamando al endpoint http://my.own.api y obtener un balanceo entre 2 instancias.
+Entre las muchas funcionalidades que traefik tiene integradas podemos encontrar un balanceador de carga con resoluciones DNS.
+El desafio propuesto es poder utilizar traefik y descubrir sus funcionalidades integrandolo en nuestro proyecto. Las tareas a realizarse son:
+
+- Descargar e instanciar mediante docker run la imagen [containous/whoami](https://hub.docker.com/r/containous/whoami) y entender la informacion que esta nos brinda. Dentro de esa información identificar el valor que nos permita conocer la IP del contenedor. Esto sera util para mas adelante.
+- Levantar al menos 2 servicios (uno con nuestra API y otro sirviendo la imagen publica containous/whoami) y visualizarlos en el dashboard de traefik. Verificar tambien el acceso mediante el DNS http://my.own.api.localhost y http://my.own.whoami.localhost respectivamente.
+- Una vez desplegados los dos servicios, generar replicas para nuestro servicio whoami con el comando `docker-compose scale whoami=3` y acceder a http://my.own.whoami.localhost para verificar el balanceo de carga entre los distintos contenedores notando las diferentes IP's de contenedores que reciban nuestra petición.
+
+*AYUDA*: Aqui (https://docs.traefik.io/user-guides/docker-compose/basic-example/) encontrarán un ejemplo sencillo de uso de traefik incluso con la imagen containous/whoami.
