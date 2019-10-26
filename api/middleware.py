@@ -3,9 +3,9 @@ import time
 import redis
 import settings
 from uuid import uuid4
-db = redis.StrictRedis(host=settings.REDIS_IP,
-                       port=settings.REDIS_PORT,
-                       db=settings.REDIS_DB_ID)
+db = redis.Redis(host=settings.REDIS_IP,
+                 port=settings.REDIS_PORT,
+                 db=settings.REDIS_DB_ID)
 
 
 def model_predict(text_data):
