@@ -40,7 +40,7 @@ def classify_process():
     # TODO
     while True:
         # TODO
-        queue = db.lrange(settings.REDIS_QUEUE, 0, 10)
+        queue = db.lrange(settings.REDIS_QUEUE, 0, 9)
 
         # TODO
         for q in queue:
@@ -59,7 +59,7 @@ def classify_process():
 
             db.set(job_id, json.dumps(output))
 
-            db.ltrim(settings.REDIS_QUEUE, 11, -1)
+        db.ltrim(settings.REDIS_QUEUE, len(queue), -1)
 
         # sleep for a small amount
         time.sleep(settings.SERVER_SLEEP)
