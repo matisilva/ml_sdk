@@ -22,6 +22,8 @@ La estructura base del proyecto será la siguiente:
 │   ├── settings.py
 │   └── tests
 │       └── test_model.py
+├── stress_test
+│   └── locustfile.py
 ├── docker-compose.yml
 ├── README.md
 └── tests
