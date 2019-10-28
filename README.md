@@ -15,16 +15,13 @@ $ docker-compose down
 
 ## Tests
 
-### Integración
-
-Necesitas tener instalado *requests* (`pip install requests>=2.22.0`).
-
-`$ python3 tests/test_integration.py`
-
-### API
-
-`$ docker-compose exec api python3 tests/test_api.py`
-
-### Model
-
-`$ docker-compose exec model python3 tests/test_model.py`
+- Instalar un virtualenv con los requirements.txt del origen
+```
+virtualenv --python=python3 .env
+source .env/bin/activate
+pip install -r requirements.txt
+```
+- Correr los tests con nosetests
+```
+nosetests [<package_name>]
+```
