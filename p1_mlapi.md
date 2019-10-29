@@ -40,7 +40,7 @@ Veamos una descripción rasgos generales de cada modulo:
     - `api/settings.py`: Contiene las configuraciones generales de nuestra API.
     - `api/templates`: Contiene el frontend de nuestro servicio.
     - `api/tests`: Suite de tests.
-- model: Módulo con las funciones necesarias para obtener tareas desde Redis y procesarlas con nuestro modelo de Machine Learning. Una vez obtenidos los resultados, debemos encolarlos para que sean devueltos al usuario.
+- model: Módulo con las funciones necesarias para obtener tareas desde Redis y procesarlas con nuestro modelo de Machine Learning. Una vez obtenidos los resultados, debemos encolarlos para que sean devueltos al usuario. Utilizaremos un modelo de analisis de sentimientos para oraciones en español ya entrenado que puede ser instalado simplemente con pip ([link](https://github.com/aylliote/senti-py)).
     - `model/ml_service.py`: Corre un hilo que se encarga de obtener tareas, procesarlas y devolver una respuesta.
     - `model/settings.py`: Configuraciones generales para nuestro modelo.
     - `model/tests`: Suite de tests.
