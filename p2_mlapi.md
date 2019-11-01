@@ -35,7 +35,7 @@ Una vez realizadas las configuraciones iniciales para completar la tarea será n
 - *histograma de actividad* diferenciando cuales dieron respuesta positiva y cuales negativa.
 - *alerta de errores* al recibir más de 10 request con codigo de error (>=400) en un minuto
 
-*AYUDA*: Aqui (https://docs.graylog.org/en/3.1/pages/installation/docker.html) encontrarán la informacion al respecto de como levantar el stack propuesto. Los pasos para la configuración inicial serán explicados en el teórico.
+*AYUDA*: Aqui (https://docs.graylog.org/en/3.1/pages/installation/docker.html) encontrarán la informacion al respecto de como levantar el stack propuesto. Los pasos para la configuración inicial serán explicados en el teórico. Ademas deberán agregar los prints necesarios para poder ingestar los datos minimos que necesitan para su dashboard.
 
 ## 3. Scaling de servicios
 
