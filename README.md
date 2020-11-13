@@ -17,11 +17,19 @@ $ docker-compose down
 
 - Instalar un virtualenv con los requirements.txt del origen
 ```
-virtualenv --python=python3 .env
+virtualenv --python=python3.5 .env
 source .env/bin/activate
 pip install -r requirements.txt
 ```
 - Correr los tests con nosetests
 ```
+nosetests [<package_name>]
+```
+
+- Si no tienen python3.5 y no lo quieren instalar.. Pueden probar instanciando un container con python 3.5 de la siguiente manera
+
+```
+docker run -v $(pwd):/src -it --net=host -w /src python:3.5 bash
+pip install -r requirements.txt
 nosetests [<package_name>]
 ```
