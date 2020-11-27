@@ -1,3 +1,4 @@
+import time
 from typing import Dict
 from ml_sdk.model import MLModelInterface
 from ml_sdk.model.input import (
@@ -23,6 +24,7 @@ class MLSentimentModel(MLModelInterface):
     
     def _predict(self, input_: InferenceInput):
         stats = self.analyzer.Analyse(input_.text)
+        time.sleep(4)
         return stats
     
     def _postprocess(self, output) -> InferenceOutput:

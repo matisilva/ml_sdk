@@ -1,15 +1,12 @@
 from typing import Optional
 
 from fastapi import FastAPI, HTTPException
-# from ml_sdk.communication.kafka import KafkaDispatcher, KafkaSettings
-from ml_sdk.communication.redis import RedisDispatcher, RedisSettings
+from ml_sdk.communication.kafka import KafkaDispatcher, KafkaSettings
 from ml_sdk.model.input import TextInput
 
 app = FastAPI()
-# kafka_settings = KafkaSettings(topic='sentiment_model', dns='kafka')
-# connector = KafkaDispatcher(kafka_settings)
-redis_settings = RedisSettings(topic='sentiment_model', host='redis')
-connector = RedisDispatcher(redis_settings)
+kafka_settings = KafkaSettings(topic='sentiment_model', dns='kafka')
+connector = KafkaDispatcher(kafka_settings)
 
 app = FastAPI()
 

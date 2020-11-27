@@ -6,38 +6,38 @@ from typing import Dict
 class WorkerInterface(metaclass=ABCMeta):
     def _request(self):
         key, kwargs = self._consume()
-        result = self._work(**kwargs)
+        method = kwargs.pop('method', None)
+        result = self._execute(method, **kwargs)
         self._reply(key, result)
     
-    def _work(self, *args, **kwargs):
-        method = kwargs.pop('method', None)
-        if method is None:
-            return
+    def _execute(self, method, *args, **kwargs):
         func = getattr(self.handler, method)
         return func(**kwargs)
 
     def _reply(self, key, message):
-        self._produce(key, message)
+        self._produce(message, key)   
     
-    @abstractmethod
-    def _produce(self, key, message):
-        pass
-    
-    @abstractmethod
-    def _consume(self):
-        pass
-    
-    def serve(self):
+    def serve_forever(self):
         self.stop = False
         while not self.stop:
             self._request()
 
+    def stop(self):
+        self.stop = True
+
+    @abstractmethod
+    def _produce(self, message, key=None):
+        pass
+    
+    @abstractmethod
+    def _consume(self, key=None):
+        pass
 
 class DispatcherInterface(metaclass=ABCMeta):
     def dispatch(self, method, **kwargs):
         key = uuid.uuid4().hex
         kwargs['method'] = method
-        self._produce(key, kwargs)
+        self._produce(kwargs, key)
         result = self._get_result(key)
         return result
     
@@ -46,7 +46,7 @@ class DispatcherInterface(metaclass=ABCMeta):
         return result
 
     @abstractmethod
-    def _produce(self, key, message):
+    def _produce(self, message, key=None):
         pass
     
     @abstractmethod

@@ -1,7 +1,7 @@
-from ml_sdk.communication.kafka import KafkaWorker, KafkaSettings
 from sentiment_model import MLSentimentModel
+from ml_sdk.communication.redis import RedisWorker, RedisSettings
 
-kafka_settings = KafkaSettings(topic='sentiment_model', dns='kafka')
-worker = KafkaWorker(kafka_settings, handler=MLSentimentModel())
+redis_settings = RedisSettings(topic='sentiment_model', host='redis')
+worker = RedisWorker(redis_settings, handler=MLSentimentModel())
 
-worker.serve()
+worker.serve_forever()
