@@ -1,34 +1,54 @@
 version: "3.2"
 services:
   api:
-    image: flask_api
-    container_name: ml_api
+    image: ml_api
     build:
-      context: ./api
-    command: "gunicorn --workers=8 --bind 0.0.0.0:5000 app:app"
+      context: .
+      dockerfile: ./api/Dockerfile
     ports:
-      - "80:5000"
-    environment:
-      - FLASK_DEBUG=1
-    depends_on:
-      - redis
-      - model
-    volumes:
-      - ./feedback:/src/feedback
-    logging:
-      driver: "gelf"
-      options:
-        gelf-address: "udp://localhost:12201"
-        tag: "api-logs"
-
-  redis:
-    image: redis:5.0.6
+      - "80:80"
+    tty: true
+    networks:
+      - app-tier
 
   model:
-    image: ml_service
-    container_name: ml_service
+    image: model
     build:
-      context: ./model
-    command: "python3 /src/ml_service.py"
+      context: ./
+      dockerfile: ./model/Dockerfile
     depends_on:
-      - redis
+      - kafka
+    tty: true
+    networks:
+      - app-tier
+
+  zookeeper:
+    image: 'bitnami/zookeeper:latest'
+    ports:
+      - '2181:2181'
+    environment:
+      - ALLOW_ANONYMOUS_LOGIN=yes
+    networks:
+      - app-tier
+
+  kafka:
+    image: 'bitnami/kafka:latest'
+    ports:
+      - '9092:9092'
+      - '9093:9093'
+    environment:
+      - KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181
+      - ALLOW_PLAINTEXT_LISTENER=yes
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CLIENT:PLAINTEXT,EXTERNAL:PLAINTEXT
+      - KAFKA_CFG_LISTENERS=CLIENT://:9092,EXTERNAL://:9093
+      - KAFKA_CFG_ADVERTISED_LISTENERS=CLIENT://kafka:9092,EXTERNAL://localhost:9093
+      - KAFKA_INTER_BROKER_LISTENER_NAME=CLIENT
+    depends_on:
+      - zookeeper
+    networks:
+      - app-tier
+  
+
+networks:
+  app-tier:
+    driver: bridge

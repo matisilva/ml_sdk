@@ -1,8 +1,15 @@
-FROM python:3.5
+FROM python:3.8
 
-ADD requirements.txt .
+ADD ./api/requirements.txt .
 RUN pip3 install -r requirements.txt
 
-ADD ./ /src/
+EXPOSE 80
 
-WORKDIR /src
+# TODO remove this when package is done
+ADD ./ml_sdk /app/ml_sdk
+RUN pip3 install -r /app/ml_sdk/requirements.txt
+
+COPY ./api /app
+WORKDIR /app
+
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "80"]
