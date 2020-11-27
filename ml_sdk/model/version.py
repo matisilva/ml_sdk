@@ -1,6 +1,4 @@
-from dataclasses import dataclass
-from distutils.version import LooseVersion
+from pydantic import BaseModel
 
-@dataclass
-class ModelVersion:
-    version: LooseVersion
+class ModelVersion(BaseModel):
+    version: str

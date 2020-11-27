@@ -1,29 +1,23 @@
 import json
-from dataclasses import dataclass
+from pydantic import BaseModel
 from enum import Enum
 
-class InputType(Enum):
-    INFERENCE_MESSAGE = "inference"
-    TRAIN_MESSAGE = "train"
-    TEST_MESSAGE = "test"
-    DEPLOY_MESSAGE = "deploy"
 
+class TextInput(BaseModel):
+    text: str
 
-@dataclass
-class Input:
-    data: dict
+class ImageInput(BaseModel):
+    image: str # TODO numpy array
 
+class Input(BaseModel):
+    records: list
+    batch_size: int = 1
 
-@dataclass
 class InferenceInput(Input):
     pass
 
-
-@dataclass
 class TestInput(Input):
     pass
 
-
-@dataclass
 class TrainInput(Input):
     pass

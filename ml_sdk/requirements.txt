@@ -2,3 +2,4 @@ ipython==7.8.0
 dataclasses==0.6
 kafka-rpc==1.0.11
 gevent
+pydantic==1.7.2

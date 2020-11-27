@@ -1,11 +1,13 @@
+from typing import Dict
 from ml_sdk.model import MLModelInterface
 from ml_sdk.model.input import (
     InferenceInput,
     TrainInput,
-    TestInput
+    TestInput,
+    TextInput
 )
 from ml_sdk.model.version import ModelVersion
-from ml_sdk.model.output import ReportOutput, InferenceOutput
+from ml_sdk.model.output import ReportOutput, InferenceOutput, ClassificationOutput
 from AnalyseSentiment.AnalyseSentiment import AnalyseSentiment
 
 
@@ -16,19 +18,20 @@ class MLSentimentModel(MLModelInterface):
     def _deploy(self, version: ModelVersion):
         self.analyzer = AnalyseSentiment()
 
-    def _preprocess(self, input_) -> InferenceInput:
-        return InferenceInput(data=input_)
+    def _preprocess(self, input_: Dict) -> InferenceInput:
+        return TextInput(**input_)
     
     def _predict(self, input_: InferenceInput):
-        stats = self.analyzer.Analyse(input_.data)
+        stats = self.analyzer.Analyse(input_.text)
         return stats
     
     def _postprocess(self, output) -> InferenceOutput:
+        print(output)
         data = {
             'prediction': output['overall_sentiment'],
             'score': output['overall_sentiment_score']
         }
-        return InferenceOutput(data=data)
+        return ClassificationOutput(**data)
 
     def _train(self, input_: TrainInput) -> ModelVersion:
         raise NotImplementedError

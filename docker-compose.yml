@@ -16,11 +16,16 @@ services:
     build:
       context: ./
       dockerfile: ./model/Dockerfile
-    depends_on:
-      - kafka
     tty: true
     networks:
       - app-tier
+
+  # redis:
+  #   image: redis:5.0.6
+  #   ports:
+  #     - 6379:6379
+  #   networks:
+  #     - app-tier
 
   zookeeper:
     image: 'bitnami/zookeeper:latest'

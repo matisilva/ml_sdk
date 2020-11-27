@@ -4,7 +4,6 @@ from ml_sdk.model.input import (
     InferenceInput,
     TrainInput,
     TestInput,
-    InputType,
 )
 from ml_sdk.model.version import ModelVersion
 from ml_sdk.model.output import (
@@ -19,11 +18,11 @@ class MLModelInterface(metaclass=ABCMeta):
         input_ = self._preprocess(input_)
         output = self._predict(input_)
         output = self._postprocess(output)
-        return asdict(output)
+        return output.dict()
 
     def version(self):
         output = self._version()
-        return asdict(output)
+        return output.dict()
 
     def train(self, input_: TrainInput):
         output = self._train(input_)

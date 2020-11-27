@@ -1,16 +1,16 @@
-from dataclasses import dataclass
+from pydantic import BaseModel
 
 
-@dataclass
-class Output:
-    data: dict
+class ClassificationOutput(BaseModel):
+    prediction: str
+    score: float
 
+class Output(BaseModel):
+    records: list
+    scores: list
 
-@dataclass
 class InferenceOutput(Output):
     pass
 
-
-@dataclass
 class ReportOutput(Output):
     pass
