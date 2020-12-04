@@ -4,9 +4,9 @@ import logging
 import redis
 from dataclasses import dataclass
 from ml_sdk.communication import DispatcherInterface, WorkerInterface
-from ml_sdk.model import MLModelInterface
 
 logger = logging.getLogger(__name__)
+
 
 @dataclass
 class RedisSettings:
@@ -60,7 +60,7 @@ class RedisNode:
 
 
 class RedisWorker(RedisNode, WorkerInterface):
-    def __init__(self, settings: RedisSettings, handler: MLModelInterface):
+    def __init__(self, settings: RedisSettings, handler):
         super(RedisWorker, self).__init__(settings)
         self.handler = handler
 

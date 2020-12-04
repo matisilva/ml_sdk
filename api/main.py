@@ -1,44 +1,30 @@
-from typing import Optional
+from fastapi import FastAPI
+from fastapi.openapi.utils import get_openapi
+from routers.sentiment_analyisis import SentimentAnalysisAPI
 
-from fastapi import FastAPI, HTTPException
-# from ml_sdk.communication.kafka import KafkaDispatcher, KafkaSettings
-from ml_sdk.communication.redis import RedisDispatcher, RedisSettings
-from ml_sdk.model.input import TextInput
-
-app = FastAPI()
-# kafka_settings = KafkaSettings(topic='sentiment_model', dns='kafka')
-# connector = KafkaDispatcher(kafka_settings)
-redis_settings = RedisSettings(topic='sentiment_model', host='redis')
-connector = RedisDispatcher(redis_settings)
-
+# APP
 app = FastAPI()
 
+# MODELS
+# TODO change this to a mapping automatically added
+sentiment_analyisis = SentimentAnalysisAPI()
+app.include_router(sentiment_analyisis.router,
+                   prefix=f"/{sentiment_analyisis.MODEL_NAME}",
+                   tags=[sentiment_analyisis.MODEL_NAME])
 
-@app.post("/sentiment_model/predict")
-def predict(input_: TextInput):
-    return connector.dispatch('predict', input_=input_.dict())
-
-
-@app.get("/sentiment_model/version")
-def version():
-    return connector.dispatch('version')
-
-
-@app.get("/sentiment_model/train")
-def train():
-    raise HTTPException(status_code=404, detail="Not Implemented")
-
-
-@app.get("/sentiment_model/test")
-def test():
-    raise HTTPException(status_code=404, detail="Not Implemented")
-
-
-@app.get("/sentiment_model/deploy")
-def deploy():
-    raise HTTPException(status_code=404, detail="Not Implemented")
-
-
-@app.get("/")
-def index():
-    return {}
+# SWAGGER CUSTOMIZATION
+def custom_openapi():
+    if app.openapi_schema:
+        return app.openapi_schema
+    openapi_schema = get_openapi(
+        title="FaMAF API Swagger",
+        version="0.0.1",
+        description="",
+        routes=app.routes,
+    )
+    openapi_schema["info"]["x-logo"] = {
+        "url": "https://www.famaf.unc.edu.ar/static/assets/logoFaMAF.svg"
+    }
+    app.openapi_schema = openapi_schema
+    return app.openapi_schema
+app.openapi = custom_openapi

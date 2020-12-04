@@ -1,7 +1,0 @@
-from sentiment_model import MLSentimentModel
-from ml_sdk.communication.kafka import KafkaWorker, KafkaSettings
-
-kafka_settings = KafkaSettings(topic='sentiment_model', dns='kafka')
-worker = KafkaWorker(kafka_settings, handler=MLSentimentModel())
-
-worker.serve_forever()
