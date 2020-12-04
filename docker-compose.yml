@@ -13,8 +13,6 @@ services:
       - "8080:8080"
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
-    networks:
-      - app-tier
 
   api:
     image: ml_api
@@ -24,8 +22,6 @@ services:
     # ports:
     #   - "80:80"
     tty: true
-    networks:
-      - app-tier
     labels:
       - "traefik.enable=true"
       - "traefik.http.services.api.loadbalancer.server.port=80"
@@ -38,15 +34,11 @@ services:
       context: ./
       dockerfile: ./model/Dockerfile
     tty: true
-    networks:
-      - app-tier
 
   redis:
     image: redis:5.0.6
     ports:
       - 6379:6379
-    networks:
-      - app-tier
 
   # zookeeper:
   #   image: 'bitnami/zookeeper:latest'
@@ -74,7 +66,3 @@ services:
   #   networks:
   #     - app-tier
   
-
-networks:
-  app-tier:
-    driver: overlay
