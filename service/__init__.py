@@ -13,7 +13,13 @@ from ml_sdk.io.output import (
 
 
 class MLServiceInterface(metaclass=ABCMeta):
+    INPUT_TYPE = None
+    OUTPUT_TYPE = None
+    COMMUNICATION_TYPE = None
+    MODEL_NAME = None
+
     def __init__(self):
+        self._validate_instance()
         if self.COMMUNICATION_TYPE == RedisWorker:
             self.settings = RedisSettings(topic=self.MODEL_NAME, host='redis')
         else:
@@ -21,6 +27,12 @@ class MLServiceInterface(metaclass=ABCMeta):
         self.worker = self.COMMUNICATION_TYPE(self.settings, handler=self)
         self._deploy(self.INITIAL_VERSION)
     
+    def _validate_instance(self):
+        assert self.INPUT_TYPE is not None, "You have to setup an INPUT_TYPE"
+        assert self.OUTPUT_TYPE is not None, "You have to setup an OUTPUT_TYPE"
+        assert self.COMMUNICATION_TYPE is not None, "You have to setup a COMMUNICATION_TYPE"
+        assert self.MODEL_NAME is not None, "You have to setup a MODEL_NAME"
+
     def serve_forever(self):
         self.worker.serve_forever()
 

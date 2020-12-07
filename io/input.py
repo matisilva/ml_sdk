@@ -1,4 +1,5 @@
 import json
+from fastapi import UploadFile
 from pydantic import BaseModel
 from enum import Enum
 
@@ -20,8 +21,5 @@ class TrainInput(BaseModel):
 class TextInput(InferenceInput):
     text: str
 
-class ImageInput(InferenceInput):
-    image: str # TODO numpy array
-
-class FileInput(InferenceInput):
-    pass
+ImageInput = UploadFile
+FileInput = UploadFile

@@ -1,4 +1,4 @@
-To use this you just need to run
-```
-docker-compose up -d
-```
+# TODO complete this
+Not enough time to build the README.md by now.
+
+Will be here soon
