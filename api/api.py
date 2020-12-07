@@ -44,7 +44,7 @@ class MLAPI:
                                       response_model= List[self.OUTPUT_TYPE])
         self.router.add_api_route("/version",
                                   self.get_version,
-                                  methods=["GET"]
+                                  methods=["GET"],
                                   response_model=ModelVersion)
         self.router.add_api_route("/version",
                                   self.post_version,
