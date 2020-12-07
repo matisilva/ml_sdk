@@ -11,6 +11,8 @@ from ml_sdk.io.output import (
     InferenceOutput,
     ReportOutput,
     ClassificationOutput,
+    BatchInferenceJob,
+    JobID
 )
 
 
@@ -23,5 +25,6 @@ __all__ = [
     'ReportOutput',
     'ClassificationOutput',
     'ModelVersion',
-    'ModelDescription'
+    'ModelDescription',
+    'BatchClassificationJob'
 ]
