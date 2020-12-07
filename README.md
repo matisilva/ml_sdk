@@ -1,10 +1,13 @@
-# TODO complete this
-Not enough time to build the README.md by now.
+# FaMAF sample deployment platform
 
+## Arch overview
+![Arch overview](ML_SDK.png "Architecture overview")
 
-- Add images for general understanding
-- Add techs used
-- Add Use Case
-- Link to video/GIF deploying a new model
+## Tech used
+TODO
 
-- Fix requirements.
+## Use case
+TODO
+
+## Deploy a model with the SDK
+TODO
