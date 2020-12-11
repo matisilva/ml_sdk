@@ -1,9 +1,8 @@
+from typing import List
 from abc import ABCMeta, abstractmethod
 from ml_sdk.communication.redis import RedisWorker, RedisSettings
 from ml_sdk.io.input import (
     InferenceInput,
-    TrainInput,
-    TestInput,
 )
 from ml_sdk.io.version import ModelVersion
 from ml_sdk.io.output import (
@@ -45,14 +44,8 @@ class MLServiceInterface(metaclass=ABCMeta):
         output = self._version()
         return output.dict()
 
-    def train(self, _input: TrainInput):
-        # TODO call this async in a thread and return a default output
-        output = self._train(_input)
-        return output
-        
-    def test(self, input_: TestInput):
-        # TODO call this async in a thread and return a default output
-        output = self._test(input_)
+    def train(self, input_: List[InferenceInput]):
+        output = self._train(input_)
         return output
     
     def deploy(self, input_: ModelVersion):
@@ -68,11 +61,7 @@ class MLServiceInterface(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def _train(self, train_input: TrainInput) -> ModelVersion:
-        pass
-
-    @abstractmethod
-    def _test(self, test_input: TestInput, version: ModelVersion = None) -> ReportOutput:
+    def _train(self, input_: List[InferenceInput]):
         pass
 
     @abstractmethod

@@ -1,13 +1,13 @@
 from abc import ABCMeta, abstractmethod
-from ml_sdk.io import BatchInferenceJob, JobID, InferenceOutput
+from ml_sdk.io import JobID, InferenceOutput
 
 class DatabaseInterface(metaclass=ABCMeta):
     @abstractmethod
-    def get_job(self, key: JobID) -> BatchInferenceJob:
+    def get_job(self, key: JobID):
         pass
     
     @abstractmethod
-    def create_job(self, total: int) -> BatchInferenceJob:
+    def create_job(self, total: int):
         pass
 
     @abstractmethod

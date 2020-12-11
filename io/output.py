@@ -6,8 +6,10 @@ from typing import List, Dict
 class Output(BaseModel):
     pass
 
+
 class InferenceOutput(Output):
     pass
+
 
 class ReportOutput(Output):
     pass
@@ -16,15 +18,5 @@ class ReportOutput(Output):
 # Basic output types
 class ClassificationOutput(InferenceOutput):
     prediction: str
-    score: float
+    score: float = 0
     input: Dict
-
-# Batch Jobs
-JobID = str
-
-
-class BatchInferenceJob(Output):
-    job_id: JobID
-    total: int
-    processed: int = 0
-    results: List[Dict] = []
