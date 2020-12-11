@@ -1,4 +1,5 @@
 from fastapi import APIRouter, HTTPException, File
+from fastapi.responses import StreamingResponse
 from typing import List, Dict, Optional
 from ml_sdk.communication.redis import RedisDispatcher, RedisSettings
 from ml_sdk.database.redis import RedisDatabase
@@ -64,14 +65,15 @@ class MLAPI:
                                   self.post_predict(),
                                   methods=["POST"],
                                   response_model=self.OUTPUT_TYPE)
-        # TODO complete response model
-        self.router.add_api_route("/train",
-                                  self.get_train,
-                                  methods=["GET"])
-        self.router.add_api_route("/train",
-                                  self.post_train,
-                                  methods=["POST"])
         if self.FILE_PARSER is not None:
+            self.router.add_api_route("/train",
+                                    self.get_train,
+                                    methods=["GET"],
+                                    response_model=TrainJob)
+            self.router.add_api_route("/train",
+                                    self.post_train,
+                                    methods=["POST"],
+                                    response_model=TrainJob)
             self.router.add_api_route("/test",
                                       self.post_test,
                                       methods=["POST"],
@@ -80,12 +82,6 @@ class MLAPI:
                                       self.get_test,
                                       methods=["GET"],
                                       response_model=TestJob)
-        # self.router.add_api_route("/test",
-        #                           self.get_test,
-        #                           methods=["GET"])
-        # self.router.add_api_route("/test",
-        #                           self.post_test,
-        #                           methods=["POST"])
 
     def post_predict(self):
         connector = self.connector
@@ -93,10 +89,16 @@ class MLAPI:
             return connector.dispatch('predict', input_=input_.dict())
         return _inner
 
-    def get_test(self, job_id: JobID) -> TestJob:
+    def get_test(self, job_id: JobID, as_file: bool = False) -> TestJob:
+        # Job results
         job_result = self.database.get_job(JobID(job_id))
         job_result['results'] = [self.OUTPUT_TYPE(**res) for res in job_result['results']]
-        return TestJob(**job_result)
+        
+        # Return file or formatted repsonse
+        if as_file:
+            return self._get_test_file(job_result)
+        else:
+            return self._get_test(job_result)
 
     def post_test(self, input_: FileInput = File(...)) -> TestJob:
         assert callable(self.FILE_PARSER), "You have to setup first a FILE_PARSER"
@@ -145,6 +147,20 @@ class MLAPI:
         return ModelDescription(**{"model": self.MODEL_NAME})
 
     # Internal methods
+    def _get_test_file(self, job_result: TestJob):
+        filename = self.FILE_PARSER.generate_filename()
+        media_type = self.FILE_PARSER.mediatype
+        fieldnames = self.OUTPUT_TYPE.__fields__.keys()
+        lines = job_result['results']
+        with self.FILE_PARSER.build(lines=lines, fieldnames=fieldnames) as file_content:
+            response = StreamingResponse(file_content,
+                                         media_type=media_type)
+            response.headers["Content-Disposition"] = f"attachment; filename={filename}"
+        return response
+
+    def _get_test(self, job_result: TestJob):
+        return TestJob(**job_result)
+
     def _async_predict(self, job: TestJob, items: List[InferenceInput]):
         # TODO refactor this controlling threads.
         import threading
