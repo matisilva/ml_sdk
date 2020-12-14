@@ -49,11 +49,17 @@ class RedisNode:
             self.redis.delete(key)
         else:
             while True:
+                # Read broadcasted messages
+                message = self.pubsub.get_message()
+                if message is not None:
+                    if message['type'] == 'pmessage':
+                        message = message['data']
+                        break
+                # Read individual messages
                 message = self.redis.lpop(self.topic)
-                if message is None:
-                    time.sleep(0.5)
-                    continue
-                break
+                if message is not None:
+                    break
+                time.sleep(0.5)
             message = self._decode(message)
             key = message.pop('key')
         return key, message
@@ -63,9 +69,11 @@ class RedisWorker(RedisNode, WorkerInterface):
     def __init__(self, settings: RedisSettings, handler):
         super(RedisWorker, self).__init__(settings)
         self.handler = handler
+        self.pubsub = self.redis.pubsub()
+        self.pubsub.psubscribe(f'{self.topic}*')
+        self.pubsub.get_message()
 
     def _produce(self, message, key=None):
-        logger.info(message)
         self.redis.set(key, self._encode(message))
 
 class RedisDispatcher(RedisNode, DispatcherInterface):
@@ -73,3 +81,7 @@ class RedisDispatcher(RedisNode, DispatcherInterface):
     def _produce(self, message, key=None):
         message['key'] = key
         self.redis.rpush(self.topic, self._encode(message))
+
+    def _broadcast(self, message):
+        message['key'] = None
+        self.redis.publish(self.topic, self._encode(message))

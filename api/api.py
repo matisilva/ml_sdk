@@ -143,9 +143,10 @@ class MLAPI:
         return self.connector.dispatch('version')
 
     def post_version(self, input_: VersionID):
-        # TODO input_ = self.database.get_version(input_)
+        # TODO input_ = self.database.get_or_create_version(input_)
         input_ = ModelVersion(version=input_)
-        return self.connector.dispatch('deploy', input_=input_.dict())
+        self.connector.broadcast('deploy', input_=input_.dict())
+        return input_
 
     def index(self) -> ModelDescription:
         return ModelDescription(**{"model": self.MODEL_NAME})

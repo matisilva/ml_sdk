@@ -52,7 +52,6 @@ class MLServiceInterface(metaclass=ABCMeta):
     
     def deploy(self, input_: Dict):
         self._deploy(ModelVersion(**input_))
-        return self.version()
     
     @abstractmethod
     def _deploy(self, version: ModelVersion):
