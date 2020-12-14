@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException, File
 from fastapi.responses import StreamingResponse
 from typing import List, Dict, Optional
+from ml_sdk.api.parsers import CSVFileParser
 from ml_sdk.communication.redis import RedisDispatcher, RedisSettings
 from ml_sdk.database.redis import RedisDatabase
 from ml_sdk.io import (
@@ -11,16 +12,16 @@ from ml_sdk.io import (
     TrainJob,
     JobID,
 )
-from ml_sdk.io.version import ModelVersion, ModelDescription
+from ml_sdk.io.version import ModelVersion, ModelDescription, VersionID
 
 
 class MLAPI:
     MODEL_NAME = None
-    FILE_PARSER = None
-    COMMUNICATION_TYPE = None
-    DATABASE_TYPE = None
     INPUT_TYPE = None
     OUTPUT_TYPE = None
+    COMMUNICATION_TYPE = RedisDispatcher
+    DATABASE_TYPE = RedisDatabase
+    FILE_PARSER = CSVFileParser
 
     def __init__(self):
         self._validate_instance()
@@ -50,43 +51,44 @@ class MLAPI:
         assert self.MODEL_NAME is not None, "You have to setup a MODEL_NAME"
 
     def _add_routes(self):
-        self.router.add_api_route("/", self.index,
+        self.router.add_api_route("/",
+                                  self.index,
                                   methods=["GET"],
                                   response_model=ModelDescription)
-        self.router.add_api_route("/version",
-                                  self.get_version,
-                                  methods=["GET"],
-                                  response_model=ModelVersion)
-        self.router.add_api_route("/version",
-                                  self.post_version,
-                                  methods=["POST"],
-                                  response_model=ModelVersion)
         self.router.add_api_route("/predict",
                                   self.post_predict(),
                                   methods=["POST"],
                                   response_model=self.OUTPUT_TYPE)
-        if self.FILE_PARSER is not None:
-            self.router.add_api_route("/train",
-                                    self.get_train,
-                                    methods=["GET"],
-                                    response_model=TrainJob)
-            self.router.add_api_route("/train",
-                                    self.post_train,
-                                    methods=["POST"],
-                                    response_model=TrainJob)
-            self.router.add_api_route("/test",
-                                      self.post_test,
-                                      methods=["POST"],
-                                      response_model=TestJob)
-            self.router.add_api_route("/test",
-                                      self.get_test,
-                                      methods=["GET"],
-                                      response_model=TestJob)
+        self.router.add_api_route("/test",
+                                  self.post_test,
+                                  methods=["POST"],
+                                  response_model=TestJob)
+        self.router.add_api_route("/test",
+                                  self.get_test,
+                                  methods=["GET"],
+                                  response_model=TestJob)
+        self.router.add_api_route("/train",
+                                  self.post_train,
+                                  methods=["POST"],
+                                  response_model=TrainJob)
+        self.router.add_api_route("/train",
+                                  self.get_train,
+                                  methods=["GET"],
+                                  response_model=TrainJob)
+        self.router.add_api_route("/version",
+                                  self.post_version,
+                                  methods=["POST"],
+                                  response_model=ModelVersion)
+        self.router.add_api_route("/version",
+                                  self.get_version,
+                                  methods=["GET"],
+                                  response_model=ModelVersion)
 
     def post_predict(self):
         connector = self.connector
         def _inner(input_: self.INPUT_TYPE) -> self.OUTPUT_TYPE:
-            return connector.dispatch('predict', input_=input_.dict())
+            results = connector.dispatch('predict', input_=input_.dict())
+            return results
         return _inner
 
     def get_test(self, job_id: JobID, as_file: bool = False) -> TestJob:
@@ -140,15 +142,17 @@ class MLAPI:
     def get_version(self) -> ModelVersion:
         return self.connector.dispatch('version')
 
-    def post_version(self, input_: ModelVersion):
-        raise HTTPException(status_code=404, detail="Not Implemented")
+    def post_version(self, input_: VersionID):
+        # TODO input_ = self.database.get_version(input_)
+        input_ = ModelVersion(version=input_)
+        return self.connector.dispatch('deploy', input_=input_.dict())
 
     def index(self) -> ModelDescription:
         return ModelDescription(**{"model": self.MODEL_NAME})
 
     # Internal methods
     def _get_test_file(self, job_result: TestJob):
-        filename = self.FILE_PARSER.generate_filename()
+        filename = self.FILE_PARSER.generate_filename(prefix=self.MODEL_NAME)
         media_type = self.FILE_PARSER.mediatype
         fieldnames = self.OUTPUT_TYPE.__fields__.keys()
         lines = job_result['results']
@@ -172,14 +176,13 @@ class MLAPI:
             t = threading.Thread(target=_inner, args=(self.database, job, item))
             t.start()
 
+
     def _async_train(self, job: TestJob, input_: List[InferenceOutput]):
         # TODO refactor this controlling threads.
         import threading
         def _inner(database, job, input_):
-            train_result = self.connector.dispatch('train', input_=input_)
-            job.scores = train_result
-            job.progress = 100
-            self.database.update_train_job(job=job, output=train_result)
+            model_version = self.connector.dispatch('train', input_=input_)
+            self.database.update_train_job(job=job, version=model_version)
         input_ = [i.dict() for i in input_]
         t = threading.Thread(target=_inner, args=(self.database, job, input_))
         t.start()

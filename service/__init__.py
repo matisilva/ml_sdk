@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Dict
 from abc import ABCMeta, abstractmethod
 from ml_sdk.communication.redis import RedisWorker, RedisSettings
 from ml_sdk.io.input import (
@@ -14,8 +14,9 @@ from ml_sdk.io.output import (
 class MLServiceInterface(metaclass=ABCMeta):
     INPUT_TYPE = None
     OUTPUT_TYPE = None
-    COMMUNICATION_TYPE = None
     MODEL_NAME = None
+    COMMUNICATION_TYPE = RedisWorker
+    INITIAL_VERSION = ModelVersion(version="Default")
 
     def __init__(self):
         self._validate_instance()
@@ -35,7 +36,7 @@ class MLServiceInterface(metaclass=ABCMeta):
     def serve_forever(self):
         self.worker.serve_forever()
 
-    def predict(self, input_: InferenceInput):
+    def predict(self, input_: Dict):
         inference_input = self.INPUT_TYPE(**input_)
         output = self._predict(inference_input)
         return output.dict()
@@ -44,13 +45,14 @@ class MLServiceInterface(metaclass=ABCMeta):
         output = self._version()
         return output.dict()
 
-    def train(self, input_: List[InferenceInput]):
-        output = self._train(input_)
-        return output
+    def train(self, input_: List[Dict]):
+        train_input = [self.OUTPUT_TYPE(**i) for i in input_]
+        output = self._train(train_input)
+        return output.dict()
     
-    def deploy(self, input_: ModelVersion):
-        output = self._deploy(input_)
-        return output
+    def deploy(self, input_: Dict):
+        self._deploy(ModelVersion(**input_))
+        return self.version()
     
     @abstractmethod
     def _deploy(self, version: ModelVersion):
@@ -65,5 +67,5 @@ class MLServiceInterface(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def _version(self) -> ModelVersion:
+    def _version(self):
         pass

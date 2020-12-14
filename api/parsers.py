@@ -1,4 +1,5 @@
 import csv
+from datetime import datetime
 from abc import abstractmethod, ABCMeta
 from contextlib import contextmanager
 from tempfile import SpooledTemporaryFile, NamedTemporaryFile
@@ -49,5 +50,6 @@ class CSVFileParser(FileParser):
         yield open(f.name, mode="rb")
         f.close()
     
-    def generate_filename() -> str:
-        return "OUTPUT.csv" 
+    @staticmethod
+    def generate_filename(prefix="model") -> str:
+        return f"{prefix}_output_{datetime.now()}.csv"

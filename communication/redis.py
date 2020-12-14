@@ -65,6 +65,7 @@ class RedisWorker(RedisNode, WorkerInterface):
         self.handler = handler
 
     def _produce(self, message, key=None):
+        logger.info(message)
         self.redis.set(key, self._encode(message))
 
 class RedisDispatcher(RedisNode, DispatcherInterface):

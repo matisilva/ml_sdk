@@ -6,7 +6,7 @@ import uuid
 from typing import Dict
 from ml_sdk.communication.redis import RedisSettings
 from ml_sdk.database import DatabaseInterface
-from ml_sdk.io import TestJob, TrainJob, JobID, InferenceOutput, InferenceInput
+from ml_sdk.io import TestJob, TrainJob, JobID, InferenceOutput, InferenceInput, ModelVersion
 
 logger = logging.getLogger(__name__)
 
@@ -51,10 +51,10 @@ class RedisDatabase(DatabaseInterface):
         self.redis.set(str(job_id), self._encode(job))
         return job
 
-    def update_train_job(self, job: TrainJob, output):
+    def update_train_job(self, job: TrainJob, version: ModelVersion):
         job_id = job.job_id
         job = self.get_train_job(job_id)
         job['progress'] = 100
-        job['scores'] = output
+        job['version'] = version
         self.redis.set(str(job_id), self._encode(job))
         

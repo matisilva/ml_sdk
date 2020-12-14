@@ -27,7 +27,6 @@ class TestJob(Output):
 class TrainJob(Output):
     job_id: JobID
     progress: int = 0
-    scores: Dict = None
     version: ModelVersion = None
 
 
