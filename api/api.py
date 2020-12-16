@@ -67,22 +67,22 @@ class MLAPI:
                                   self.get_test,
                                   methods=["GET"],
                                   response_model=TestJob)
-        self.router.add_api_route("/train",
-                                  self.post_train,
-                                  methods=["POST"],
-                                  response_model=TrainJob)
-        self.router.add_api_route("/train",
-                                  self.get_train,
-                                  methods=["GET"],
-                                  response_model=TrainJob)
-        self.router.add_api_route("/version",
-                                  self.post_version,
-                                  methods=["POST"],
-                                  response_model=ModelVersion)
-        self.router.add_api_route("/version",
-                                  self.get_version,
-                                  methods=["GET"],
-                                  response_model=ModelVersion)
+        # self.router.add_api_route("/train",
+        #                           self.post_train,
+        #                           methods=["POST"],
+        #                           response_model=TrainJob)
+        # self.router.add_api_route("/train",
+        #                           self.get_train,
+        #                           methods=["GET"],
+        #                           response_model=TrainJob)
+        # self.router.add_api_route("/version",
+        #                           self.post_version,
+        #                           methods=["POST"],
+        #                           response_model=ModelVersion)
+        # self.router.add_api_route("/version",
+        #                           self.get_version,
+        #                           methods=["GET"],
+        #                           response_model=ModelVersion)
 
     def post_predict(self):
         connector = self.connector
