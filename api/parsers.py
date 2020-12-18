@@ -29,8 +29,13 @@ class CSVFileParser(FileParser):
 
     @staticmethod
     def parse(file: SpooledTemporaryFile) -> Iterable:
-        lines = [line.decode('utf-8') for line in file.readlines()]
-        reader = csv.DictReader(lines)
+        try:
+            lines = [line.decode('utf-8') for line in file.readlines()]
+            reader = csv.DictReader(lines)
+        except UnicodeDecodeError:
+            file.seek(0)
+            lines = [line.decode('ISO-8859-1') for line in file.readlines()]
+            reader = csv.DictReader(lines, delimiter=";")
         return reader
 
     @staticmethod
