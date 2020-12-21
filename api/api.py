@@ -1,3 +1,4 @@
+import logging
 from fastapi import APIRouter, HTTPException, File
 from fastapi.responses import StreamingResponse
 from typing import List, Dict, Optional
@@ -13,6 +14,9 @@ from ml_sdk.io import (
     JobID,
 )
 from ml_sdk.io.version import ModelVersion, ModelDescription, VersionID
+
+
+logger = logging.getLogger()
 
 
 class MLAPI:
@@ -63,7 +67,7 @@ class MLAPI:
                                   self.post_test,
                                   methods=["POST"],
                                   response_model=TestJob)
-        self.router.add_api_route("/test",
+        self.router.add_api_route("/test/{job_id}",
                                   self.get_test,
                                   methods=["GET"],
                                   response_model=TestJob)
@@ -71,7 +75,7 @@ class MLAPI:
         #                           self.post_train,
         #                           methods=["POST"],
         #                           response_model=TrainJob)
-        # self.router.add_api_route("/train",
+        # self.router.add_api_route("/train/{job_id}",
         #                           self.get_train,
         #                           methods=["GET"],
         #                           response_model=TrainJob)
@@ -107,8 +111,8 @@ class MLAPI:
 
         # parsing
         parser = self.FILE_PARSER()
-        parsed_content = parser.parse(input_.file)
-        items = [self.INPUT_TYPE(**registry) for registry in parsed_content]
+        items = parser.parse(input_.file)
+        items = list(items)
 
         # job creation
         job = self.database.create_job(total=len(items))
@@ -155,9 +159,8 @@ class MLAPI:
     def _get_test_file(self, job_result: TestJob):
         filename = self.FILE_PARSER.generate_filename(prefix=self.MODEL_NAME)
         media_type = self.FILE_PARSER.mediatype
-        fieldnames = self.OUTPUT_TYPE.__fields__.keys()
         lines = job_result['results']
-        with self.FILE_PARSER.build(lines=lines, fieldnames=fieldnames) as file_content:
+        with self.FILE_PARSER.build(lines=lines) as file_content:
             response = StreamingResponse(file_content,
                                          media_type=media_type)
             response.headers["Content-Disposition"] = f"attachment; filename={filename}"
@@ -166,13 +169,18 @@ class MLAPI:
     def _get_test(self, job_result: TestJob):
         return TestJob(**job_result)
 
-    def _async_predict(self, job: TestJob, items: List[InferenceInput]):
+    def _async_predict(self, job: TestJob, items: List):
         # TODO refactor this controlling threads.
         import threading
         def _inner(database, job, item):
             predict_func = self.post_predict()
-            inference_result = predict_func(item)
-            self.database.update_job(job=job, output=inference_result)
+            try:
+                item = self.INPUT_TYPE(**item)
+            except Exception as e:
+                logger.info(f"Ommited {item} Failure during parsing: {str(e)}")
+            else:
+                inference_result = predict_func(item)
+                self.database.update_job(job=job, output=inference_result)
         for item in items:
             t = threading.Thread(target=_inner, args=(self.database, job, item))
             t.start()

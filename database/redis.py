@@ -40,7 +40,7 @@ class RedisDatabase(DatabaseInterface):
     def update_job(self, job: TestJob, output: InferenceOutput):
         task_id = f"{self.topic}_{job.job_id}_{uuid.uuid4()}"
         self.redis.set(task_id, self._encode(output))
-    
+
     def get_train_job(self, key: JobID) -> Dict:
         job = self._decode(self.redis.get(key))
         return job
@@ -57,4 +57,3 @@ class RedisDatabase(DatabaseInterface):
         job['progress'] = 100
         job['version'] = version
         self.redis.set(str(job_id), self._encode(job))
-        

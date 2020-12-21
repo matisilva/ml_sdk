@@ -8,7 +8,7 @@ class Output(BaseModel):
 
 
 class InferenceOutput(Output):
-    pass
+    input: Dict
 
 
 class ReportOutput(Output):
@@ -16,7 +16,14 @@ class ReportOutput(Output):
 
 
 # Basic output types
-class ClassificationOutput(InferenceOutput):
+class Classification(Output):
     prediction: str
     score: float = 0
-    input: Dict
+
+
+class ClassificationOutput(InferenceOutput, Classification):
+    pass
+
+
+class MultiClassificationOutput(InferenceOutput):
+    predictions: List[Classification]

@@ -4,14 +4,13 @@ from ml_sdk.io.input import (
     ImageInput,
     InferenceInput,
     FileInput,
-    Parameter,
 )
 from ml_sdk.io.version import ModelVersion, ModelDescription
 from ml_sdk.io.output import (
     Output,
     InferenceOutput,
-    ReportOutput,
     ClassificationOutput,
+    MultiClassificationOutput,
 )
 
 
@@ -36,11 +35,10 @@ __all__ = [
     'ImageInput',
     'InferenceInput',
     'InferenceOutput',
-    'ReportOutput',
+    'MultiClassificationOutput'
     'ClassificationOutput',
     'ModelVersion',
     'ModelDescription',
     'TrainJob',
     'TestJob',
-    'Parameter'
 ]

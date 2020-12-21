@@ -1,9 +1,23 @@
 import csv
+import pandas as pd
 from datetime import datetime
 from abc import abstractmethod, ABCMeta
 from contextlib import contextmanager
 from tempfile import SpooledTemporaryFile, NamedTemporaryFile
 from typing import Iterable
+
+
+def _flat_dict(pyobj, keystring=''):
+    if type(pyobj) == dict:
+        keystring = keystring + '_' if keystring else keystring
+        for k in pyobj:
+            yield from _flat_dict(pyobj[k], keystring + str(k))
+    elif type(pyobj) == list:
+        keystring = keystring + '_' if keystring else keystring
+        for n, obj in enumerate(pyobj):
+            yield from _flat_dict(obj, keystring + str(n))
+    else:
+        yield keystring, pyobj
 
 
 class FileParser(metaclass=ABCMeta):
@@ -16,13 +30,13 @@ class FileParser(metaclass=ABCMeta):
 
     @staticmethod
     @abstractmethod
-    def build(lines: Iterable, keys: Iterable) -> SpooledTemporaryFile:
+    def build(lines: Iterable) -> SpooledTemporaryFile:
         pass
-    
+
     @staticmethod
     @abstractmethod
     def generate_filename() -> str:
-        return 
+        return
 
 class CSVFileParser(FileParser):
     mediatype = "text/csv"
@@ -30,31 +44,69 @@ class CSVFileParser(FileParser):
     @staticmethod
     def parse(file: SpooledTemporaryFile) -> Iterable:
         try:
-            lines = [line.decode('utf-8') for line in file.readlines()]
-            reader = csv.DictReader(lines)
+            df = pd.read_csv(file._file,
+                             warn_bad_lines=True,
+                             error_bad_lines=False)
         except UnicodeDecodeError:
             file.seek(0)
-            lines = [line.decode('ISO-8859-1') for line in file.readlines()]
-            reader = csv.DictReader(lines, delimiter=";")
-        return reader
+            df = pd.read_csv(file._file,
+                             encoding='ISO-8859-1',
+                             sep=";",
+                             warn_bad_lines=True,
+                             error_bad_lines=False)
+        df = df.fillna("")
+        yield from df.to_dict("records")
 
     @staticmethod
     @contextmanager
-    def build(lines: Iterable, fieldnames: Iterable):
+    def build(lines: Iterable):
         f = NamedTemporaryFile('w')
-        w = csv.DictWriter(f, fieldnames=fieldnames)
-        w.writeheader()
-        for line in lines:
-            line = line.dict()
-            keys = line.keys()
-            for key in list(line.keys()):
-                if key not in fieldnames:
-                    line.pop(key)
-            w.writerow(line)
+        records = []
+
+        for index, line in enumerate(lines):
+            line = _flat_dict(line.dict())
+            line = { key: value for key, value in line}
+            records.append(line)
+
+        df = pd.DataFrame(records)
+        df.to_csv(f.name)
         f.seek(0)
         yield open(f.name, mode="rb")
         f.close()
-    
+
     @staticmethod
     def generate_filename(prefix="model") -> str:
         return f"{prefix}_output_{datetime.now()}.csv"
+
+
+class XLSXFileParser(FileParser):
+    mediatype = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+
+    @staticmethod
+    def parse(file: SpooledTemporaryFile) -> Iterable:
+        df = pd.read_excel(file)
+        df = df.fillna("")
+        yield from df.to_dict("records")
+
+    @staticmethod
+    @contextmanager
+    def build(lines: Iterable):
+        f = NamedTemporaryFile('w')
+        records = []
+
+        for index, line in enumerate(lines):
+            line = _flat_dict(line.dict())
+            line = { key: value for key, value in line}
+            records.append(line)
+
+        df = pd.DataFrame(records)
+        df.to_excel(f.name,
+                    sheet_name='Model Output',
+                    engine='xlsxwriter')
+        f.seek(0)
+        yield open(f.name, mode="rb")
+        f.close()
+
+    @staticmethod
+    def generate_filename(prefix="model") -> str:
+        return f"{prefix}_output_{datetime.now()}.xlsx"
