@@ -18,3 +18,4 @@ class ModelVersion(BaseModel):
 class ModelDescription(BaseModel):
     model: str
     description: Optional[str]
+    version: ModelVersion = None

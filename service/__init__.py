@@ -1,3 +1,5 @@
+import os
+import json
 from typing import List, Dict
 from abc import ABCMeta, abstractmethod
 from ml_sdk.communication.redis import RedisWorker, RedisSettings
@@ -16,7 +18,8 @@ class MLServiceInterface(metaclass=ABCMeta):
     OUTPUT_TYPE = None
     MODEL_NAME = None
     COMMUNICATION_TYPE = RedisWorker
-    INITIAL_VERSION = ModelVersion(version="Default")
+    BINARY_FOLDER = "/bin/"
+    VERSIONS_FILE = "versions.json"
 
     def __init__(self):
         self._validate_instance()
@@ -25,8 +28,27 @@ class MLServiceInterface(metaclass=ABCMeta):
         else:
             raise NotImplementedError
         self.worker = self.COMMUNICATION_TYPE(self.settings, handler=self)
-        self._deploy(self.INITIAL_VERSION)
+        self._deploy_enabled_version()
     
+    def _read_config(self):
+        with open(os.path.join(self.BINARY_FOLDER, self.VERSIONS_FILE)) as setup_file:
+            content = json.load(setup_file)
+        return content
+
+    def _write_config(self, new_config):
+        with open(os.path.join(self.BINARY_FOLDER, self.VERSIONS_FILE), "w") as setup_file:
+            json.dump(new_config, setup_file, indent=4)
+
+    def _deploy_enabled_version(self):
+        config = self._read_config()
+        self.version = config['enabled']
+        self._deploy(self.version)
+
+    def _set_version(self, model_version: ModelVersion):
+        config = self._read_config()
+        config["availables"].append(model_version.dict())
+        self._write_config(config)
+
     def _validate_instance(self):
         assert self.INPUT_TYPE is not None, "You have to setup an INPUT_TYPE"
         assert self.OUTPUT_TYPE is not None, "You have to setup an OUTPUT_TYPE"
@@ -36,23 +58,35 @@ class MLServiceInterface(metaclass=ABCMeta):
     def serve_forever(self):
         self.worker.serve_forever()
 
-    def predict(self, input_: Dict):
+    def predict(self, input_: Dict) -> Dict:
         inference_input = self.INPUT_TYPE(**input_)
         output = self._predict(inference_input)
         return output.dict()
 
-    def version(self):
-        output = self._version()
-        return output.dict()
+    def enabled_version(self) -> Dict:
+        return self.version
 
-    def train(self, input_: List[Dict]):
+    def available_versions(self) -> List[Dict]:
+        config = self._read_config()
+        return config
+
+    def train(self, input_: List[Dict]) -> Dict:
         train_input = [self.OUTPUT_TYPE(**i) for i in input_]
-        output = self._train(train_input)
-        return output.dict()
+        version = self._train(train_input)
+        self._set_version(version)
+        return version.dict()
     
     def deploy(self, input_: Dict):
-        self._deploy(ModelVersion(**input_))
-    
+        self.version = input_
+        config = self._read_config()
+        target_version = None
+        for conf in config["availables"]:
+            if conf["version"] == input_["version"]:
+                target_version = ModelVersion(**conf)
+                self._deploy(target_version)
+                break
+        return target_version
+
     @abstractmethod
     def _deploy(self, version: ModelVersion):
         pass
@@ -63,8 +97,4 @@ class MLServiceInterface(metaclass=ABCMeta):
 
     @abstractmethod
     def _train(self, input_: List[InferenceInput]):
-        pass
-
-    @abstractmethod
-    def _version(self):
         pass

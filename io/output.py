@@ -25,5 +25,5 @@ class ClassificationOutput(InferenceOutput, Classification):
     pass
 
 
-class MultiClassificationOutput(InferenceOutput):
-    predictions: List[Classification]
+class MultiClassificationOutput(ClassificationOutput):
+    predictions: List[Classification] = []

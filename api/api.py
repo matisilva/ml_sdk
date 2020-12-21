@@ -1,7 +1,7 @@
 import logging
-from fastapi import APIRouter, HTTPException, File
-from fastapi.responses import StreamingResponse
-from typing import List, Dict, Optional
+from fastapi import APIRouter, File, status
+from fastapi.responses import StreamingResponse, JSONResponse
+from typing import List, Dict
 from ml_sdk.api.parsers import CSVFileParser
 from ml_sdk.communication.redis import RedisDispatcher, RedisSettings
 from ml_sdk.database.redis import RedisDatabase
@@ -21,6 +21,7 @@ logger = logging.getLogger()
 
 class MLAPI:
     MODEL_NAME = None
+    DESCRIPTION = None
     INPUT_TYPE = None
     OUTPUT_TYPE = None
     COMMUNICATION_TYPE = RedisDispatcher
@@ -71,23 +72,23 @@ class MLAPI:
                                   self.get_test,
                                   methods=["GET"],
                                   response_model=TestJob)
-        # self.router.add_api_route("/train",
-        #                           self.post_train,
-        #                           methods=["POST"],
-        #                           response_model=TrainJob)
-        # self.router.add_api_route("/train/{job_id}",
-        #                           self.get_train,
-        #                           methods=["GET"],
-        #                           response_model=TrainJob)
-        # self.router.add_api_route("/version",
-        #                           self.post_version,
-        #                           methods=["POST"],
-        #                           response_model=ModelVersion)
-        # self.router.add_api_route("/version",
-        #                           self.get_version,
-        #                           methods=["GET"],
-        #                           response_model=ModelVersion)
+        self.router.add_api_route("/train",
+                                  self.post_train,
+                                  methods=["POST"],
+                                  response_model=TrainJob)
+        self.router.add_api_route("/train/{job_id}",
+                                  self.get_train,
+                                  methods=["GET"],
+                                  response_model=TrainJob)
+        self.router.add_api_route("/version/{version_id}",
+                                  self.post_version,
+                                  methods=["POST"],
+                                  response_model=ModelVersion)
+        self.router.add_api_route("/version",
+                                  self.get_version,
+                                  methods=["GET"])
 
+    # VIEWS
     def post_predict(self):
         connector = self.connector
         def _inner(input_: self.INPUT_TYPE) -> self.OUTPUT_TYPE:
@@ -131,31 +132,39 @@ class MLAPI:
 
         # parsing
         parser = self.FILE_PARSER()
-        parsed_content = parser.parse(input_.file)
-        parsed_content = [{"prediction": reg.pop('prediction'), "input": reg} for reg in parsed_content]
-        items = [self.OUTPUT_TYPE(**reg) for reg in parsed_content]
+        items = parser.parse(input_.file)
+        try:
+            items = [{"prediction": reg.pop('prediction'), "input": reg} for reg in items]
+            items = [self.OUTPUT_TYPE(**reg).dict() for reg in items]
+        except Exception as exc:
+            logger.error(exc)
+            return JSONResponse(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                content=jsonable_encoder({"detail": exc.errors(), "Error": "Input file corrupt"}),
+            )
 
         # job creation
         job = self.database.create_train_job()
         job = TrainJob(**job)
 
         # trigger train task
-        self._async_train(job=job, input_=items)
+        self._async_train(job=job, items=items)
         return job
 
     def get_version(self) -> ModelVersion:
-        return self.connector.dispatch('version')
+        return self.connector.dispatch('available_versions')
 
-    def post_version(self, input_: VersionID):
-        # TODO input_ = self.database.get_or_create_version(input_)
-        input_ = ModelVersion(version=input_)
+    def post_version(self, version_id: VersionID):
+        input_ = ModelVersion(version=version_id)
         self.connector.broadcast('deploy', input_=input_.dict())
         return input_
 
     def index(self) -> ModelDescription:
-        return ModelDescription(**{"model": self.MODEL_NAME})
+        return ModelDescription(**{"model": self.MODEL_NAME,\
+                                   "description": self.DESCRIPTION,
+                                   "version": self.connector.dispatch('enabled_version')})
 
-    # Internal methods
+    # INTERNAL
     def _get_test_file(self, job_result: TestJob):
         filename = self.FILE_PARSER.generate_filename(prefix=self.MODEL_NAME)
         media_type = self.FILE_PARSER.mediatype
@@ -186,12 +195,12 @@ class MLAPI:
             t.start()
 
 
-    def _async_train(self, job: TestJob, input_: List[InferenceOutput]):
+    def _async_train(self, job: TestJob, items: List):
         # TODO refactor this controlling threads.
         import threading
-        def _inner(database, job, input_):
-            model_version = self.connector.dispatch('train', input_=input_)
+        def _inner(database, job, items):
+            model_version = self.connector.dispatch('train', input_=items)
             self.database.update_train_job(job=job, version=model_version)
-        input_ = [i.dict() for i in input_]
-        t = threading.Thread(target=_inner, args=(self.database, job, input_))
+
+        t = threading.Thread(target=_inner, args=(self.database, job, items))
         t.start()
