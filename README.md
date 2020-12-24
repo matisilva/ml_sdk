@@ -1,27 +1,195 @@
-# FaMAF sample deployment platform
-This code deploys a set of models with its needed infrastructure.
-It is using [ML_SDK](https://bitbucket.org/vinculacion-famaf-rentas/ml_sdk) as a submodule.
+# FaMAF SDK
+This is a set of tools to make the deployment of ML models easier.
 
 ## Arch overview
-![Arch overview](https://bitbucket.org/vinculacion-famaf-rentas/sample_deployment_platform/raw/2140614ef3ba683cd41cdd91d0f69c8c0b216a5a/ML%20SDK.jpg "Architecture overview")
+![Arch overview](./ML%20SDK.jpg "Architecture overview")
 
-This is the list of models to be deployed:
-    - SentimentAnalysis - Python - unique version
+## API (dispatcher): FastAPI
+You just need to create a FastAPI instance and add your model routes there.
+```
+app = FastAPI(
+    title=title,
+    description=description,
+    version=version,
+)
 
-## How to clone the repo?
-**IMPORTANT**: clone the repo with its submodules just as follows
+MODELS_TO_DEPLOY = [
+    SentimentAnalisisAPI,
+    ClassifierAPI,
+]
+
+for model in MODELS_TO_DEPLOY:
+    model = model()
+    app.include_router(model.router,
+                       prefix=f"/{model.MODEL_NAME}",
+                       tags=[model.MODEL_NAME])
+```
+
+To build the models you can just inherit from the SDK as follows:
+```
+from enum import Enum
+from ml_sdk.communication.redis import RedisDispatcher
+from ml_sdk.database.redis import RedisDatabase
+from ml_sdk.io import InferenceInput, MultiClassificationOutput
+from ml_sdk.api import MLAPI, CSVFileParser, XLSXFileParser
+
+
+class Channel(str, Enum):
+    web = "Pagina web"
+    redes = "Redes"
+    telefonico = "Telefonico"
+    chat = "Chat"
+
+class CommentsInput(InferenceInput):
+    comentario_atencion: str
+    comentario_fcr: str
+    comentario_canal: str
+    comentario_ce: str
+    canal: Channel
+
+
+class ClassifierAPI(MLAPI):
+    MODEL_NAME = 'classifier'
+    INPUT_TYPE = CommentsInput
+    OUTPUT_TYPE = MultiClassificationOutput
+    FILE_PARSER = XLSXFileParser
+```
+
+## MLModel (worker): Python
+You just need to inherit from SDK and implement some methods from the interface.
+```
+# Python imports
+import logging
+from typing import List
+from enum import Enum
+
+# Lib imports
+from fasttext import load_model
+from ml_sdk.service import MLServiceInterface
+from ml_sdk.io.input import InferenceInput
+from ml_sdk.io.version import ModelVersion, Scores
+from ml_sdk.io.output import MultiClassificationOutput, InferenceOutput
+from ml_sdk.communication.redis import RedisWorker
+
+
+logger = logging.getLogger(__name__)
+
+
+class Channel(str, Enum):
+    web = "Pagina web"
+    redes = "Redes"
+    telefonico = "Telefonico"
+    chat = "Chat"
+
+
+class CommentsInput(InferenceInput):
+    comentario_atencion: str
+    comentario_fcr: str
+    comentario_canal: str
+    comentario_ce: str
+    canal: Channel
+
+    @property
+    def text(self):
+        return " ".join([getattr(self, f) for f in self.__fields__])
+
+    @property
+    def preprocessed_text(self):
+        return (self.text
+                .lower()
+                .replace("\r", " ")
+                .replace("\n", " "))
+
+
+class Classifier(MLServiceInterface):
+    MODEL_NAME = 'classifier'
+    INPUT_TYPE = CommentsInput
+    OUTPUT_TYPE = MultiClassificationOutput
+
+    def _deploy(self, version: ModelVersion):
+        # Deploy version
+        logger.info(f"Deploying {version}")
+        self.modelred = load_model("/bin/model.bin")
+
+    def _predict(self, input_: InferenceInput) -> InferenceOutput:
+        logger.info(input_)
+        ... 
+        
+        # Report
+        output = {
+            'predictions': [
+                {
+                    'prediction': prediction_0,
+                    'score': score_0,
+                },
+                {
+                    'prediction': prediction_1,
+                    'score': score_1,
+                },
+                {
+                    'prediction': prediction_2,
+                    'score': score_2,
+                },
+            ],
+            'prediction': prediction_0,
+            'score': score_0,
+            'input': input_
+        }
+        logger.info(output)
+        return self.OUTPUT_TYPE(**output)
+
+    def _train(self, input_: List[InferenceOutput]):
+        ...
+
+if __name__ == '__main__':
+    Classifier().serve_forever()
+```
+
+## Deployment recipe: docker-compose
+Create a compose to deploy everything together
+```
+version: "3.2"
+services:
+  api:
+    image: ml_api
+    build:
+      context: .
+      dockerfile: ./api/Dockerfile
+    ports:
+      - "80:80"
+    tty: true
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.services.api.loadbalancer.server.port=80"
+      - "traefik.http.routers.api.rule=Host(`api.localhost`)"
+      - "traefik.http.routers.api.entrypoints=web"
+
+  sentiment_analysis:
+    image: sentiment_analysis
+    build:
+      context: ./
+      dockerfile: ./sentiment_analysis/Dockerfile
+    volumes:
+      - ./sentiment_analysis/bin:/bin
+    tty: true
+
+  classifier:
+    image: classifier
+    build:
+      context: ./
+      dockerfile: ./classifier/Dockerfile
+    volumes:
+      - ./classifier/bin:/bin
+    tty: true
+
+  redis:
+    image: redis:5.0.6
+    ports:
+      - 6379:6379
 
 ```
-git clone --recurse-submodules git@bitbucket.org:vinculacion-famaf-rentas/sample_deployment_platform.git
-```
 
-To update SDK (pull submodules)
-
-```
-git submodule update
-```
-
-## How to run the repo:
+## How to run all:
 Install docker and docker-compose and then just run
 ```
 docker-compose up -d
@@ -35,13 +203,9 @@ Documentation available in `http://localhost/redoc`
 Swagger available in `http://localhost/docs`
 Check **Try it out** button in each definition.
 
-## Traefik as a load balancer:
-TODO
 
 ## How to add your models?
-Please fork from this repo and follow the steps
-1) create a new folder copying from `./model` folder as a template.
-2) modify `service.py` file adding your customizations for the model just inheriting from `MLServiceInterface`
+1) Implement your own worker inheriting from `MLServiceInterface`
 ```python
 from ml_sdk.service import MLServiceInterface
 from ml_sdk.io.input import (
@@ -70,18 +234,11 @@ class MyNewModel(MLServiceInterface):
 
     def _train(self, input_: TrainInput) -> ModelVersion:
         ...
- 
-    def _test(self, input_: TestInput, version: ModelVersion) -> ReportOutput:
-        ...
-
-    def _version(self) -> ModelVersion:
-        ...
 
 if __name__ == '__main__':
     MyNewModel().serve_forever()
 ```
-3) add inside `./api/routers` your routes in a separate file just coping `./api/routers/sentiment_analyisis.py` as a template.
-4) add your model in mapping placed at`./api/routers/__init__.py` as follows
+2) add your model to the API
 ```python
 ...
 from routers.my_new_model import MyNewModelAPI
@@ -91,7 +248,7 @@ MODELS_TO_DEPLOY = [
     MyNewModelAPI
 ]
 ```
-5) Finally add your new service in the `docker-compose.yml` file
+3) Finally add your new service in the `docker-compose.yml` file
 ```yaml
   <MY_MODEL_NAME>:
     image: <MY_MODEL_NAME>
