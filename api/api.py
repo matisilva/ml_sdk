@@ -132,12 +132,17 @@ class MLAPI:
 
         # parsing
         parser = self.FILE_PARSER()
-        items = parser.parse(input_.file)
+        items = list(parser.parse(input_.file)) # TODO consume 1 by 1
         try:
-            items = [{"prediction": reg.pop('prediction'), "input": reg} for reg in items]
+            for i in items:
+                i.update({
+                    "input": {
+                        k: i[k]
+                        for k in self.INPUT_TYPE.__fields__
+                    }
+                })
             items = [self.OUTPUT_TYPE(**reg).dict() for reg in items]
         except Exception as exc:
-            logger.error(exc)
             return JSONResponse(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                 content=jsonable_encoder({"detail": exc.errors(), "Error": "Input file corrupt"}),

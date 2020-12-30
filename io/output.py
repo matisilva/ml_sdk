@@ -16,14 +16,19 @@ class ReportOutput(Output):
 
 
 # Basic output types
-class Classification(Output):
-    prediction: str
+class Score(Output):
     score: float = 0
 
 
-class ClassificationOutput(InferenceOutput, Classification):
+class Classification(Output):
+    prediction: str
+
+
+class ScoreOutput(InferenceOutput, Score):
     pass
 
+class ClassificationOutput(InferenceOutput, Classification, Score):
+    pass
 
 class MultiClassificationOutput(ClassificationOutput):
     predictions: List[Classification] = []
