@@ -30,7 +30,6 @@ class InferenceInput(Input):
         columns = cls.label_order()
         for col in exclude:
             columns.remove(col)
-        print(input_)
         return pd.DataFrame(data=[i.dict() for i in input_], columns=columns)
 
     @classmethod

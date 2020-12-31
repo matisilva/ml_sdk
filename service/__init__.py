@@ -1,5 +1,6 @@
 import os
 import json
+import logging
 from typing import List, Dict
 from abc import ABCMeta, abstractmethod
 from ml_sdk.communication.redis import RedisWorker, RedisSettings
@@ -11,6 +12,9 @@ from ml_sdk.io.output import (
     InferenceOutput,
     ReportOutput,
 )
+
+
+logger = logging.getLogger(__name__)
 
 
 class MLServiceInterface(metaclass=ABCMeta):
@@ -29,6 +33,7 @@ class MLServiceInterface(metaclass=ABCMeta):
         if self.COMMUNICATION_TYPE == RedisWorker:
             self.settings = RedisSettings(topic=self.MODEL_NAME, host='redis')
         else:
+            logger.error("Communication type not implemented")
             raise NotImplementedError
         self.worker = self.COMMUNICATION_TYPE(self.settings, handler=self)
 
@@ -36,6 +41,7 @@ class MLServiceInterface(metaclass=ABCMeta):
         config = self._read_config()
         self.version = ModelVersion(**config['enabled'])
         self._deploy(self.version)
+        logger.info(f"Initialized with version {self.version}")
 
     def _read_config(self):
         with open(os.path.join(self.BINARY_FOLDER, self.VERSIONS_FILE)) as setup_file:
@@ -49,6 +55,7 @@ class MLServiceInterface(metaclass=ABCMeta):
     def predict(self, input_: Dict) -> Dict:
         inference_input = self.INPUT_TYPE(**input_)
         output = self._predict(inference_input)
+        logger.info(f"Prediction {output}")
         return output.dict()
 
     def enabled_version(self) -> Dict:
@@ -69,7 +76,7 @@ class MLServiceInterface(metaclass=ABCMeta):
         config = self._read_config()
         config["availables"].append(version.dict())
         self._write_config(config)
-
+        logger.info(f"New version available {version}")
         return version.dict()
 
     def deploy(self, input_: Dict):
@@ -83,6 +90,7 @@ class MLServiceInterface(metaclass=ABCMeta):
                 config["enabled"] = conf
                 break
         self._write_config(config)
+        logger.info(f"Version {target_version} succesfully deployed")
         return target_version
 
     @abstractmethod

@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from uuid import UUID
-from typing import List, Dict
+from typing import List, Dict, Union
 
 
 class Output(BaseModel):
@@ -27,8 +27,11 @@ class Classification(Output):
 class ScoreOutput(InferenceOutput, Score):
     pass
 
-class ClassificationOutput(InferenceOutput, Classification, Score):
+class ScoredClassification(Classification, Score):
+    pass
+
+class ClassificationOutput(InferenceOutput, ScoredClassification):
     pass
 
 class MultiClassificationOutput(ClassificationOutput):
-    predictions: List[Classification] = []
+    predictions: List[ScoredClassification] = []
