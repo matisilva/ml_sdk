@@ -1,5 +1,7 @@
 import logging
+import traceback
 from fastapi import APIRouter, File, status
+from fastapi.encoders import jsonable_encoder
 from fastapi.responses import StreamingResponse, JSONResponse
 from typing import List, Dict
 from ml_sdk.api.parsers import CSVFileParser
@@ -143,9 +145,10 @@ class MLAPI:
                 })
             items = [self.OUTPUT_TYPE(**reg).dict() for reg in items]
         except Exception as exc:
+            traceback.print_exc()
             return JSONResponse(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                content=jsonable_encoder({"detail": exc.errors(), "Error": "Input file corrupt"}),
+                content=jsonable_encoder({"detail": exc, "Error": "Input file corrupt"}),
             )
 
         # job creation
