@@ -24,7 +24,8 @@ class RedisNode:
     def __init__(self, settings: RedisSettings):
         self.stop = False
         self.topic = settings.topic
-        self.redis = redis.Redis(**settings.conf)
+        redis_pool = redis.ConnectionPool(**settings.conf)
+        self.redis = redis.StrictRedis(pool=redis_pool)
    
     @staticmethod
     def _decode(msg):
