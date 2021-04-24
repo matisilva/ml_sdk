@@ -35,13 +35,6 @@ class MLServiceInterface(metaclass=ABCMeta):
         else:
             logger.error("Communication type not implemented")
             raise NotImplementedError
-        self.worker = self.COMMUNICATION_TYPE(self.settings, handler=self)
-
-        # Deploy enabled version
-        config = self._read_config()
-        self.version = ModelVersion(**config['enabled'])
-        self._deploy(self.version)
-        logger.info(f"Initialized with version {self.version}")
 
     def _read_config(self):
         with open(os.path.join(self.BINARY_FOLDER, self.VERSIONS_FILE)) as setup_file:
@@ -64,6 +57,16 @@ class MLServiceInterface(metaclass=ABCMeta):
     def available_versions(self) -> List[Dict]:
         config = self._read_config()
         return config
+
+    def train_from_file(self, filename: str):
+        parser = self.FILE_PARSER()
+        items = list(parser.parse(filename))
+        for i in items:
+            i.update({
+                "input": self.INPUT_TYPE(**PersonaInput.parse_from_categorical(i))
+            })
+        items = [self.OUTPUT_TYPE(**reg).dict() for reg in items]
+        self.train(items)
 
     def train(self, input_: List[Dict]) -> Dict:
         # Parse input
@@ -112,4 +115,10 @@ class MLServiceInterface(metaclass=ABCMeta):
         assert self.MODEL_NAME is not None, "You have to setup a MODEL_NAME"
 
     def serve_forever(self):
+        # Deploy enabled version
+        config = self._read_config()
+        self.version = ModelVersion(**config['enabled'])
+        self._deploy(self.version)
+        self.worker = self.COMMUNICATION_TYPE(self.settings, handler=self)
+        logger.info(f"Initialized with version {self.version}")
         self.worker.serve_forever()
