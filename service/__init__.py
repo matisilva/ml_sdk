@@ -46,7 +46,7 @@ class MLServiceInterface(metaclass=ABCMeta):
             json.dump(new_config, setup_file, indent=4)
 
     def predict(self, input_: Dict) -> Dict:
-        inference_input = self.INPUT_TYPE.preprocess(**input_)
+        inference_input = self.INPUT_TYPE.preprocess(input_)
         inference_input = self.INPUT_TYPE(**input_)
         output = self._predict(inference_input)
         logger.info(f"Prediction {output}")
