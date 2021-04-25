@@ -190,18 +190,19 @@ class MLAPI:
     def _async_predict(self, job: TestJob, items: List):
         # TODO refactor this controlling threads.
         import threading
-        def _inner(database, job, item):
+        def _inner(database, job, items):
             predict_func = self.post_predict()
-            try:
-                item = self.INPUT_TYPE(**item)
-            except Exception as e:
-                logger.info(f"Ommited {item} Failure during parsing: {str(e)}")
-            else:
-                inference_result = predict_func(item)
-                self.database.update_job(job=job, output=inference_result)
-        for item in items:
-            t = threading.Thread(target=_inner, args=(self.database, job, item))
-            t.start()
+            for item in items:
+                try:
+                    item = self.INPUT_TYPE(**item)
+                except Exception as e:
+                    logger.info(f"Ommited {item} Failure during parsing: {str(e)}")
+                else:
+                    inference_result = predict_func(item)
+                    self.database.update_job(job=job, output=inference_result)
+        # for item in items:
+        t = threading.Thread(target=_inner, args=(self.database, job, items))
+        t.start()
 
 
     def _async_train(self, job: TestJob, items: List):
