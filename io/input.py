@@ -33,6 +33,10 @@ class InferenceInput(Input):
         return pd.DataFrame(data=[i.dict() for i in input_], columns=columns)
 
     @classmethod
+    def preprocess(cls, input_: Dict):
+        return input_
+
+    @classmethod
     def to_list(cls, input_: List, field_name: str):
         # TODO types here should not be repr()
         return [getattr(i, field_name) for i in input_]

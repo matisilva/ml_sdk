@@ -46,6 +46,7 @@ class MLServiceInterface(metaclass=ABCMeta):
             json.dump(new_config, setup_file, indent=4)
 
     def predict(self, input_: Dict) -> Dict:
+        inference_input = self.INPUT_TYPE.preprocess(**input_)
         inference_input = self.INPUT_TYPE(**input_)
         output = self._predict(inference_input)
         logger.info(f"Prediction {output}")
@@ -64,8 +65,9 @@ class MLServiceInterface(metaclass=ABCMeta):
         items = list(parser.parse(filename))
         logger.info(f"Updating metadata")
         for i in items:
+            input_ = self.INPUT_TYPE.preprocess(i)
             i.update({
-                "input": self.INPUT_TYPE(**i)
+                "input": self.INPUT_TYPE(**input_)
             })
         items = [self.OUTPUT_TYPE(**reg).dict() for reg in items]
         self.train(items)
