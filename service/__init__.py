@@ -59,16 +59,19 @@ class MLServiceInterface(metaclass=ABCMeta):
         return config
 
     def train_from_file(self, filename: str):
+        logger.info(f"Parsing file {filename}")
         parser = self.FILE_PARSER()
         items = list(parser.parse(filename))
+        logger.info(f"Updating metadata")
         for i in items:
             i.update({
-                "input": self.INPUT_TYPE(**PersonaInput.parse_from_categorical(i))
+                "input": self.INPUT_TYPE(**i)
             })
         items = [self.OUTPUT_TYPE(**reg).dict() for reg in items]
         self.train(items)
 
     def train(self, input_: List[Dict]) -> Dict:
+        logger.info(f"Starting training")
         # Parse input
         train_input = [self.OUTPUT_TYPE(**i) for i in input_]
 
