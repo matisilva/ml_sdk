@@ -21,12 +21,14 @@ class TestJob(Output):
     job_id: JobID
     total: int
     processed: int = 0
+    started_at: str = None
     results: List[Dict] = []
 
 
 class TrainJob(Output):
     job_id: JobID
     progress: int = 0
+    started_at: str = None
     version: ModelVersion = None
 
 

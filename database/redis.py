@@ -3,6 +3,7 @@ import msgpack
 import logging
 import redis
 import uuid
+from datetime import datetime
 from typing import Dict
 from ml_sdk.communication.redis import RedisSettings
 from ml_sdk.database import DatabaseInterface
@@ -33,7 +34,7 @@ class RedisDatabase(DatabaseInterface):
 
     def create_job(self, total: int) -> Dict:
         job_id = uuid.uuid4()
-        job = {'job_id': JobID(job_id), 'total': total}
+        job = {'job_id': JobID(job_id), 'total': total, 'created_at': str(datetime.now())}
         self.redis.set(str(job_id), self._encode(job))
         return job
 
@@ -47,7 +48,7 @@ class RedisDatabase(DatabaseInterface):
 
     def create_train_job(self) -> Dict:
         job_id = uuid.uuid4()
-        job = {'job_id': JobID(job_id), 'progress': 0}
+        job = {'job_id': JobID(job_id), 'progress': 0, 'created_at': str(datetime.now())}
         self.redis.set(str(job_id), self._encode(job))
         return job
 

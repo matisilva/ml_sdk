@@ -103,13 +103,13 @@ class MLAPI:
     def get_test(self, job_id: JobID, as_file: bool = False) -> TestJob:
         # Job results
         job_result = self.database.get_job(JobID(job_id))
-        job_result['results'] = [self.OUTPUT_TYPE(**res) for res in job_result['results']]
 
         # Return file or formatted repsonse
         if as_file:
+            job_result['results'] = [self.OUTPUT_TYPE(**res) for res in job_result['results']]
             return self._get_test_file(job_result)
         else:
-            job_result['results'] = job_result['results'][:100]
+            job_result['results'] = [self.OUTPUT_TYPE(**res) for res in job_result['results'][:10]]
             return self._get_test(job_result)
 
     def post_test(self, input_: FileInput = File(...)) -> TestJob:
