@@ -1,5 +1,6 @@
 import logging
 import traceback
+import threading
 from fastapi import APIRouter, File, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import StreamingResponse, JSONResponse
@@ -19,6 +20,7 @@ from ml_sdk.io.version import ModelVersion, ModelDescription, VersionID
 
 
 logger = logging.getLogger()
+BATCH_SIZE = 1000
 
 
 class MLAPI:
@@ -111,12 +113,8 @@ class MLAPI:
             return self._get_test(job_result)
 
     def post_test(self, input_: FileInput = File(...)) -> TestJob:
-        assert callable(self.FILE_PARSER), "You have to setup first a FILE_PARSER"
-
         # parsing
-        parser = self.FILE_PARSER()
-        items = parser.parse(input_.file)
-        items = list(items)
+        items = list(self._parse_file(input_)) # TODO consume 1 by 1
 
         # job creation
         job = self.database.create_job(total=len(items))
@@ -131,11 +129,9 @@ class MLAPI:
         return TrainJob(**job_result)
 
     def post_train(self, input_: FileInput = File(...)) -> TrainJob:
-        assert callable(self.FILE_PARSER), "You have to setup first a FILE_PARSER"
-
         # parsing
-        parser = self.FILE_PARSER()
-        items = list(parser.parse(input_.file)) # TODO consume 1 by 1
+        items = list(self._parse_file(input_)) # TODO consume 1 by 1
+        # TODO move this parsing to the async_train
         try:
             for i in items:
                 i.update({
@@ -145,6 +141,7 @@ class MLAPI:
                     }
                 })
             items = [self.OUTPUT_TYPE(**reg).dict() for reg in items]
+
         except Exception as exc:
             traceback.print_exc()
             return JSONResponse(
@@ -174,6 +171,12 @@ class MLAPI:
                                    "version": self.connector.dispatch('enabled_version')})
 
     # INTERNAL
+    def _parse_file(self, input_: FileInput):
+        assert callable(self.FILE_PARSER), "You have to setup first a FILE_PARSER"
+        parser = self.FILE_PARSER()
+        items = parser.parse(input_.file)
+        yield items
+
     def _get_test_file(self, job_result: TestJob):
         filename = self.FILE_PARSER.generate_filename(prefix=self.MODEL_NAME)
         media_type = self.FILE_PARSER.mediatype
@@ -188,8 +191,6 @@ class MLAPI:
         return TestJob(**job_result)
 
     def _async_predict(self, job: TestJob, items: List):
-        # TODO refactor this controlling threads.
-        import threading
         def _inner(database, job, items):
             predict_func = self.post_predict()
             for item in items:
@@ -200,13 +201,16 @@ class MLAPI:
                 else:
                     inference_result = predict_func(item)
                     self.database.update_job(job=job, output=inference_result)
-        # for item in items:
-        t = threading.Thread(target=_inner, args=(self.database, job, items))
-        t.start()
+
+        for i in range(0, len(items), BATCH_SIZE):
+            t = threading.Thread(target=_inner, args=(self.database, job, items[i:i+BATCH_SIZE]))
+            t.start()
 
 
     def _async_train(self, job: TestJob, items: List):
-        # TODO refactor this controlling threads.
+        # TODO refactor this controlling threads with batch size
+        # TODO write registries with threads and then trigger the train.
+
         import threading
         def _inner(database, job, items):
             model_version = self.connector.dispatch('train', input_=items)
