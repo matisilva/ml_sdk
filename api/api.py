@@ -175,7 +175,7 @@ class MLAPI:
         assert callable(self.FILE_PARSER), "You have to setup first a FILE_PARSER"
         parser = self.FILE_PARSER()
         items = parser.parse(input_.file)
-        yield items
+        yield from items
 
     def _get_test_file(self, job_result: TestJob):
         filename = self.FILE_PARSER.generate_filename(prefix=self.MODEL_NAME)
