@@ -7,7 +7,7 @@ class WorkerInterface(metaclass=ABCMeta):
     def _listen(self):
         key, kwargs = self._consume()
         method = kwargs.pop('method', None)
-        kwargs.update(self._read_input_data())
+        kwargs.update(self._load_input_data(**kwargs))
         result = self._execute(method, **kwargs)
         if key:
             self._set_reply(key, result)
