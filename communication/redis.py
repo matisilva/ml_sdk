@@ -3,7 +3,9 @@ import msgpack
 import logging
 import redis
 from dataclasses import dataclass
+from typing import Iterable
 from ml_sdk.communication import DispatcherInterface, WorkerInterface
+
 
 logger = logging.getLogger(__name__)
 
@@ -38,16 +40,23 @@ class RedisNode:
     def stop(self):
         self.stop = True
 
+    def _set(self, key, message):
+        self.redis.set(key, self._encode(message))
+
+    def _get(self, key):
+        while True:
+            message = self.redis.get(key)
+            if message is None:
+                time.sleep(0.5)
+                continue
+            break
+        message = self._decode(message)
+        self.redis.delete(key)
+        return message
+
     def _consume(self, key=None):
         if key:
-            while True:
-                message = self.redis.get(key)
-                if message is None:
-                    time.sleep(0.5)
-                    continue
-                break
-            message = self._decode(message)
-            self.redis.delete(key)
+            message = self._get(key)
         else:
             while True:
                 # Read broadcasted messages
@@ -65,6 +74,23 @@ class RedisNode:
             key = message.pop('key')
         return key, message
 
+    def _load_input_data(self, **kwargs):
+        input_ = kwargs.pop('input_', None)
+        if not isinstance(input_, uuid.UUID):
+            return {}
+        items = self.redis.hvals(input_)
+        self.redis.delete(input_)
+        return {'input_': items}
+
+    def _save_input_data(self, **kwargs):
+        input_ = kwargs.pop('input_', None)
+        if not isinstance(input_, Iterable):
+            return {}
+        key = uuid.uuid4()
+        for i, value in enumerate(input_):
+            self.redis.hset(key, i, value)
+        return {'input_': key}
+
 
 class RedisWorker(RedisNode, WorkerInterface):
     def __init__(self, settings: RedisSettings, handler):
@@ -75,7 +101,7 @@ class RedisWorker(RedisNode, WorkerInterface):
         self.pubsub.get_message()
 
     def _produce(self, message, key=None):
-        self.redis.set(key, self._encode(message))
+        self._set(key, message)
 
 class RedisDispatcher(RedisNode, DispatcherInterface):
 
