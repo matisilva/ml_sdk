@@ -8,6 +8,7 @@ from typing import List, Dict
 from ml_sdk.api.parsers import CSVFileParser
 from ml_sdk.communication.redis import RedisDispatcher, RedisSettings
 from ml_sdk.database.redis import RedisDatabase
+from ml_sdk.database.mongo import MongoDatabase, MongoSettings
 from ml_sdk.io import (
     FileInput,
     InferenceOutput,
@@ -29,7 +30,7 @@ class MLAPI:
     INPUT_TYPE = None
     OUTPUT_TYPE = None
     COMMUNICATION_TYPE = RedisDispatcher
-    DATABASE_TYPE = RedisDatabase
+    DATABASE_TYPE = MongoDatabase
     FILE_PARSER = CSVFileParser
 
     def __init__(self):
@@ -45,7 +46,7 @@ class MLAPI:
         if self.DATABASE_TYPE == RedisDatabase:
             db_settings = RedisSettings(topic=f"{self.MODEL_NAME}_jobs", host='redis')
         else:
-            raise NotImplementedError
+            db_settings = MongoSettings(db=self.MODEL_NAME, host='mongo')
         self.database = self.DATABASE_TYPE(db_settings)
 
         # API Routes

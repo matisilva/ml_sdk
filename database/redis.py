@@ -14,7 +14,8 @@ logger = logging.getLogger(__name__)
 class RedisDatabase(DatabaseInterface):
     def __init__(self, settings: RedisSettings):
         self.topic = settings.topic
-        self.redis = redis.Redis(**settings.conf)
+        redis_pool = redis.ConnectionPool(**settings.conf)
+        self.redis = redis.StrictRedis(connection_pool=redis_pool)
 
     @staticmethod
     def _decode(msg):
