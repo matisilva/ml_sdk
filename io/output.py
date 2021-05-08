@@ -9,6 +9,7 @@ class Output(BaseModel):
 
 class InferenceOutput(Output):
     input: Dict
+    job_id: str = None
 
 
 class ReportOutput(Output):

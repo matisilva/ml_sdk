@@ -17,18 +17,19 @@ from ml_sdk.io.output import (
 
 JobID = str
 
-class TestJob(Output):
+class Job(Output):
     job_id: JobID
     total: int
     processed: int = 0
     started_at: str = None
+    end_at: str = None
+
+
+class TestJob(Job):
     results: List[Dict] = []
 
 
-class TrainJob(Output):
-    job_id: JobID
-    progress: int = 0
-    started_at: str = None
+class TrainJob(Job):
     version: ModelVersion = None
 
 

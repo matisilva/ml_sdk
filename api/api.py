@@ -39,14 +39,16 @@ class MLAPI:
         if self.COMMUNICATION_TYPE == RedisDispatcher:
             comm_settings = RedisSettings(topic=self.MODEL_NAME, host='redis')
         else:
-            raise NotImplementedError
+            raise NotImplementedError("Communication type not implemented")
         self.connector = self.COMMUNICATION_TYPE(comm_settings)
 
         # Database
         if self.DATABASE_TYPE == RedisDatabase:
             db_settings = RedisSettings(topic=f"{self.MODEL_NAME}_jobs", host='redis')
-        else:
+        elif self.DATABASE_TYPE == MongoDatabase:
             db_settings = MongoSettings(db=self.MODEL_NAME, host='mongo')
+        else:
+            raise NotImplementedError("Database type not implemented")
         self.database = self.DATABASE_TYPE(db_settings)
 
         # API Routes
@@ -103,31 +105,29 @@ class MLAPI:
 
     def get_test(self, job_id: JobID, as_file: bool = False) -> TestJob:
         # Job results
-        job_result = self.database.get_job(JobID(job_id))
+        job = self.database.get_test_job(JobID(job_id))
 
         # Return file or formatted repsonse
         if as_file:
-            job_result['results'] = [self.OUTPUT_TYPE(**res) for res in job_result['results']]
-            return self._get_test_file(job_result)
+            job.results = [self.OUTPUT_TYPE(**res) for res in job.results]
+            return self._create_file(job)
         else:
-            job_result['results'] = [self.OUTPUT_TYPE(**res) for res in job_result['results'][:10]]
-            return self._get_test(job_result)
+            job.results = [self.OUTPUT_TYPE(**res) for res in job.results[:10]]
+            return job
 
     def post_test(self, input_: FileInput = File(...)) -> TestJob:
         # parsing
         items = list(self._parse_file(input_)) # TODO consume 1 by 1
 
         # job creation
-        job = self.database.create_job(total=len(items))
-        job = TestJob(**job)
+        job = self.database.create_test_job(total=len(items))
 
         # trigger tasks
         self._async_predict(job=job, items=items)
         return job
 
     def get_train(self, job_id: JobID) -> TrainJob:
-        job_result = self.database.get_train_job(JobID(job_id))
-        return TrainJob(**job_result)
+        return self.database.get_train_job(JobID(job_id))
 
     def post_train(self, input_: FileInput = File(...)) -> TrainJob:
         # parsing
@@ -152,7 +152,6 @@ class MLAPI:
 
         # job creation
         job = self.database.create_train_job()
-        job = TrainJob(**job)
 
         # trigger train task
         self._async_train(job=job, items=items)
@@ -178,18 +177,15 @@ class MLAPI:
         items = parser.parse(input_.file)
         yield from items
 
-    def _get_test_file(self, job_result: TestJob):
+    def _create_file(self, job: TestJob):
         filename = self.FILE_PARSER.generate_filename(prefix=self.MODEL_NAME)
         media_type = self.FILE_PARSER.mediatype
-        lines = job_result['results']
+        lines = job.results
         with self.FILE_PARSER.build(lines=lines) as file_content:
             response = StreamingResponse(file_content,
                                          media_type=media_type)
             response.headers["Content-Disposition"] = f"attachment; filename={filename}"
         return response
-
-    def _get_test(self, job_result: TestJob):
-        return TestJob(**job_result)
 
     def _async_predict(self, job: TestJob, items: List):
         def _inner(database, job, items):
@@ -201,12 +197,11 @@ class MLAPI:
                     logger.info(f"Ommited {item} Failure during parsing: {str(e)}")
                 else:
                     inference_result = predict_func(item)
-                    self.database.update_job(job=job, output=inference_result)
+                    self.database.update_test_job(job=job, task=self.OUTPUT_TYPE(**inference_result))
 
         for i in range(0, len(items), BATCH_SIZE):
             t = threading.Thread(target=_inner, args=(self.database, job, items[i:i+BATCH_SIZE]))
             t.start()
-
 
     def _async_train(self, job: TestJob, items: List):
         # TODO refactor this controlling threads with batch size

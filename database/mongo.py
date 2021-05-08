@@ -32,34 +32,46 @@ class MongoDatabase(DatabaseInterface):
         self.mongo_jobs = self.mongo['jobs']
         self.mongo_tasks = self.mongo['tasks']
 
-    def get_job(self, key: JobID) -> Dict:
-        filter_ = {'job_id': key}
+    def get_test_job(self, job_id: JobID) -> TestJob:
+        filter_ = {'job_id': job_id}
         job = self.mongo_jobs.find_one(filter_)
-        job['results'] = list(self.mongo_tasks.find(filter_))
-        job['processed'] = self.mongo_tasks.count_documents(filter_)
+        job = TestJob(**job)
+        job.results = list(self.mongo_tasks.find(filter_))
+        job.processed = self.mongo_tasks.count_documents(filter_)
         return job
 
-    def create_job(self, total: int) -> Dict:
+    def create_test_job(self, total: int) -> TestJob:
         job_id = uuid.uuid4()
-        job = {'job_id': JobID(job_id), 'total': total, 'started_at': str(datetime.now())}
-        self.mongo_jobs.insert_one(job)
+        job = TestJob(
+            job_id=JobID(job_id),
+            total=total,
+            started_at=str(datetime.now())
+        )
+        self.mongo_jobs.insert_one(dict(job))
         return job
 
-    def update_job(self, job: TestJob, output: InferenceOutput):
-        task = dict(output)
-        task['job_id'] = job.job_id
-        self.mongo_tasks.insert_one(task)
+    def update_test_job(self, job: TestJob, task: InferenceOutput):
+        task.job_id = job.job_id
+        self.mongo_tasks.insert_one(dict(task))
 
-    def get_train_job(self, key: JobID) -> Dict:
-        job = self.mongo_jobs.find_one({ "job_id": key })
-        return job
+    def get_train_job(self, job_id: JobID) -> TrainJob:
+        filter_ = {'job_id': job_id}
+        job = self.mongo_jobs.find_one(filter_)
+        return TrainJob(**job)
 
-    def create_train_job(self) -> Dict:
+    def create_train_job(self) -> TrainJob:
         job_id = uuid.uuid4()
-        job = {'job_id': JobID(job_id), 'progress': 0, 'started_at': str(datetime.now())}
-        self.mongo_jobs.insert_one(job)
+        job = TrainJob(
+            job_id=JobID(job_id),
+            total=100,
+            started_at=str(datetime.now())
+        )
+        self.mongo_jobs.insert_one(dict(job))
         return job
 
     def update_train_job(self, job: TrainJob, version: ModelVersion):
-        job_patch = {'progress': 100, 'version': version}
-        self.mongo_jobs.update_one({ "job_id": job.job_id }, { "$set": job_patch })
+        job.processed = job.total
+        job.version = version
+        job.end_at = str(datetime.now())
+        filter_ = { "job_id": job.job_id }
+        self.mongo_jobs.update_one(filter_, { "$set": dict(job) })

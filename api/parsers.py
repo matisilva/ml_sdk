@@ -38,6 +38,7 @@ class FileParser(metaclass=ABCMeta):
     def generate_filename() -> str:
         return
 
+
 class CSVFileParser(FileParser):
     mediatype = "text/csv"
 
