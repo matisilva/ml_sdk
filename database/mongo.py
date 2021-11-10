@@ -47,7 +47,7 @@ class MongoDatabase(DatabaseInterface):
             total=total,
             started_at=str(datetime.now())
         )
-        self.mongo_jobs.insert_one(dict(job))
+        self.mongo_jobs.insert_one(job.dict())
         return job
 
     def update_test_job(self, job: TestJob, task: InferenceOutput):
