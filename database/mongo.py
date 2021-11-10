@@ -52,7 +52,7 @@ class MongoDatabase(DatabaseInterface):
 
     def update_test_job(self, job: TestJob, task: InferenceOutput):
         task.job_id = job.job_id
-        self.mongo_tasks.insert_one(dict(task))
+        self.mongo_tasks.insert_one(task.dict())
 
     def get_train_job(self, job_id: JobID) -> TrainJob:
         filter_ = {'job_id': job_id}
